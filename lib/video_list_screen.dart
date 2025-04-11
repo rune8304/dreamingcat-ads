@@ -40,12 +40,11 @@ class _VideoListScreenState extends State<VideoListScreen> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<QuerySnapshot>(
-      future:
-          FirebaseFirestore.instance
-              .collection('videos')
-              .orderBy('order', descending: false)
-              .orderBy('createdAt', descending: false)
-              .get(),
+      future: FirebaseFirestore.instance
+          .collection('videos')
+          .orderBy('order', descending: false)
+          .orderBy('createdAt', descending: false)
+          .get(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
@@ -60,53 +59,51 @@ class _VideoListScreenState extends State<VideoListScreen> {
         }
 
         final videoDocs = snapshot.data?.docs ?? [];
-        final allVideos =
-            videoDocs.map((doc) {
-              final data = doc.data() as Map<String, dynamic>;
-              final url = data['url'] ?? '';
-              final videoId = Uri.tryParse(url)?.queryParameters['v'] ?? '';
-              return {
-                'title': data['title'] ?? '',
-                'videoId': videoId,
-                'thumbnail': data['thumbnail'] ?? '',
-                'category': data['category'] ?? '',
-              };
-            }).toList();
+        final allVideos = videoDocs.map((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          final url = data['url'] ?? '';
+          final videoId = Uri.tryParse(url)?.queryParameters['v'] ?? '';
+          return {
+            'title': data['title'] ?? '',
+            'videoId': videoId,
+            'thumbnail': data['thumbnail'] ?? '',
+            'category': data['category'] ?? '',
+          };
+        }).toList();
 
-        final baseFilteredVideos =
-            selectedCategory == '전체'
-                ? allVideos
-                : allVideos
-                    .where((v) => v['category'] == selectedCategory)
-                    .toList();
+        final baseFilteredVideos = selectedCategory == '전체'
+            ? allVideos
+            : allVideos
+                .where((v) => v['category'] == selectedCategory)
+                .toList();
 
-        final filteredVideos =
-            showFavoritesOnly
-                ? baseFilteredVideos
-                    .where((v) => favoriteVideoIds.contains(v['videoId']))
-                    .toList()
-                : baseFilteredVideos;
+        final filteredVideos = showFavoritesOnly
+            ? baseFilteredVideos
+                .where((v) => favoriteVideoIds.contains(v['videoId']))
+                .toList()
+            : baseFilteredVideos;
 
         return Scaffold(
           backgroundColor: const Color(0xFF0F172A),
           appBar: AppBar(
             backgroundColor: const Color(0xFF0F172A),
             elevation: 0,
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  '꿈꾸는고양이',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  'v1.0.0',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.4),
-                    fontSize: 12,
+            title: const Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: '꿈꾸는고양이 ',
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
-                ),
-              ],
+                  TextSpan(
+                    text: 'v1.0.0',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white54,
+                    ),
+                  ),
+                ],
+              ),
             ),
             actions: [
               IconButton(
@@ -170,22 +167,21 @@ class _VideoListScreenState extends State<VideoListScreen> {
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 8),
-                  children:
-                      categories.map((category) {
-                        final isSelected = selectedCategory == category;
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: ChoiceChip(
-                            label: Text(category),
-                            selected: isSelected,
-                            onSelected: (_) {
-                              setState(() {
-                                selectedCategory = category;
-                              });
-                            },
-                          ),
-                        );
-                      }).toList(),
+                  children: categories.map((category) {
+                    final isSelected = selectedCategory == category;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: ChoiceChip(
+                        label: Text(category),
+                        selected: isSelected,
+                        onSelected: (_) {
+                          setState(() {
+                            selectedCategory = category;
+                          });
+                        },
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
               const SizedBox(height: 12),
@@ -207,11 +203,10 @@ class _VideoListScreenState extends State<VideoListScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder:
-                                (context) => VideoPlayerScreen(
-                                  videoId: video['videoId']!,
-                                  title: video['title']!,
-                                ),
+                            builder: (context) => VideoPlayerScreen(
+                              videoId: video['videoId']!,
+                              title: video['title']!,
+                            ),
                           ),
                         );
                       },
@@ -224,10 +219,10 @@ class _VideoListScreenState extends State<VideoListScreen> {
                               fit: BoxFit.cover,
                               width: double.infinity,
                               height: double.infinity,
-                              errorBuilder:
-                                  (context, error, stackTrace) => const Center(
-                                    child: Icon(Icons.broken_image),
-                                  ),
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Center(
+                                child: Icon(Icons.broken_image),
+                              ),
                             ),
                             Positioned(
                               bottom: 0,
