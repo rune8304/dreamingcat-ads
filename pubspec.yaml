@@ -1,0 +1,34 @@
+name: dreamingcat_new
+description: A cute, cozy cat sleep app
+publish_to: 'none'
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  youtube_player_flutter: ^9.1.1
+  shared_preferences: ^2.2.1
+  lottie: ^2.7.0
+  audioplayers: ^5.2.0
+  firebase_core: ^2.27.0
+  cloud_firestore: ^4.14.0
+  url_launcher: ^6.2.5
+  google_mobile_ads: ^4.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/night_sky_header.png
+    - assets/faint_background.png
+    - assets/animations/sleeping_cat.json
+    - assets/animations/falling_stars.json
+    - assets/sounds/alarm.mp3
+    - assets/logo.png

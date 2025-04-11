@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "95770487249",
+    "project_id": "dreamcat-eb052",
+    "storage_bucket": "dreamcat-eb052.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:95770487249:android:db28d9d317c52ec46798f0",
+        "android_client_info": {
+          "package_name": "com.example.dreamingcat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdZ9wyZTdFQDOplGjgWPNN0psYf10xk9w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
