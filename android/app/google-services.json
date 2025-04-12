@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "95770487249",
-    "project_id": "dreamcat-eb052",
-    "storage_bucket": "dreamcat-eb052.firebasestorage.app"
+    "project_number": "674564067084",
+    "project_id": "dreamingcat-asmr",
+    "storage_bucket": "dreamingcat-asmr.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:95770487249:android:db28d9d317c52ec46798f0",
+        "mobilesdk_app_id": "1:674564067084:android:7517dc6e7d8899211c0329",
         "android_client_info": {
           "package_name": "com.example.dreamingcat"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDdZ9wyZTdFQDOplGjgWPNN0psYf10xk9w"
+          "current_key": "AIzaSyBVj2VPI6fnD_qGraE5GhVO0mlDNELVdaA"
         }
       ],
       "services": {
