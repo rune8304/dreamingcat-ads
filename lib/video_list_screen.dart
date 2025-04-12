@@ -16,7 +16,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
   bool showFavoritesOnly = false;
   List<String> favoriteVideoIds = [];
 
-  final List<String> categories = ['전체', '비', '파도', '장작', '엔진', '풀벌레'];
+  final List<String> categories = ['전체', '비', '파도', '장작', '풀벌레', '도시'];
 
   final BannerAd _bannerAd = BannerAd(
     adUnitId: 'ca-app-pub-7625356414808879/2062467221',
@@ -37,13 +37,155 @@ class _VideoListScreenState extends State<VideoListScreen> {
     super.dispose();
   }
 
+  Widget _buildGridTile(Map<String, dynamic> video) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VideoPlayerScreen(
+              videoId: video['videoId']!,
+              title: video['title']!,
+            ),
+          ),
+        );
+      },
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Stack(
+          children: [
+            Image.network(
+              video['thumbnail'] ?? '',
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+              errorBuilder: (context, error, stackTrace) => const Center(
+                child: Icon(Icons.broken_image),
+              ),
+            ),
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                color: Colors.black.withOpacity(0.6),
+                padding: const EdgeInsets.all(8),
+                child: Text(
+                  video['title'] ?? '',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                icon: Icon(
+                  favoriteVideoIds.contains(video['videoId'])
+                      ? Icons.favorite
+                      : Icons.favorite_border,
+                  color: Colors.pinkAccent,
+                ),
+                onPressed: () {
+                  setState(() {
+                    final id = video['videoId']!;
+                    if (favoriteVideoIds.contains(id)) {
+                      favoriteVideoIds.remove(id);
+                    } else {
+                      favoriteVideoIds.add(id);
+                    }
+                  });
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildListTile(Map<String, dynamic> video) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VideoPlayerScreen(
+              videoId: video['videoId']!,
+              title: video['title']!,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.grey[850],
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                video['thumbnail'] ?? '',
+                width: 120,
+                height: 90,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    video['title'] ?? '',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: Icon(
+                favoriteVideoIds.contains(video['videoId'])
+                    ? Icons.favorite
+                    : Icons.favorite_border,
+                color: Colors.pinkAccent,
+              ),
+              onPressed: () {
+                setState(() {
+                  final id = video['videoId']!;
+                  if (favoriteVideoIds.contains(id)) {
+                    favoriteVideoIds.remove(id);
+                  } else {
+                    favoriteVideoIds.add(id);
+                  }
+                });
+              },
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<QuerySnapshot>(
       future: FirebaseFirestore.instance
           .collection('videos')
-          .orderBy('order', descending: false)
-          .orderBy('createdAt', descending: false)
+          .orderBy('order')
           .get(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -54,7 +196,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
 
         if (snapshot.hasError) {
           return Scaffold(
-            body: Center(child: Text('에러 발생: ${snapshot.error}')),
+            body: Center(child: Text('에러 발생: \${snapshot.error}')),
           );
         }
 
@@ -67,14 +209,18 @@ class _VideoListScreenState extends State<VideoListScreen> {
             'title': data['title'] ?? '',
             'videoId': videoId,
             'thumbnail': data['thumbnail'] ?? '',
-            'category': data['category'] ?? '',
+            'category':
+                (data['category'] ?? '').toString().trim().toLowerCase(),
+            'order': data['order'] ?? '',
           };
         }).toList();
+        print("💡 전체 영상 목록: $allVideos");
 
         final baseFilteredVideos = selectedCategory == '전체'
             ? allVideos
             : allVideos
-                .where((v) => v['category'] == selectedCategory)
+                .where((v) =>
+                    v['category'] == selectedCategory.trim().toLowerCase())
                 .toList();
 
         final filteredVideos = showFavoritesOnly
@@ -88,22 +234,21 @@ class _VideoListScreenState extends State<VideoListScreen> {
           appBar: AppBar(
             backgroundColor: const Color(0xFF0F172A),
             elevation: 0,
-            title: const Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(
-                    text: '꿈꾸는고양이 ',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+            title: Row(
+              children: [
+                const Text(
+                  '꿈꾸는고양이',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'v1.0.0',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.4),
+                    fontSize: 12,
                   ),
-                  TextSpan(
-                    text: 'v1.0.0',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white54,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
             actions: [
               IconButton(
@@ -129,7 +274,6 @@ class _VideoListScreenState extends State<VideoListScreen> {
           ),
           body: Column(
             children: [
-              // 타이틀 및 배경 이미지
               Stack(
                 children: [
                   SizedBox(
@@ -161,7 +305,6 @@ class _VideoListScreenState extends State<VideoListScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-              // 카테고리 선택 바
               SizedBox(
                 height: 40,
                 child: ListView(
@@ -185,97 +328,38 @@ class _VideoListScreenState extends State<VideoListScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              // 영상 리스트
               Expanded(
-                child: GridView.builder(
-                  padding: const EdgeInsets.all(12),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 20,
-                    childAspectRatio: 16 / 14,
-                  ),
-                  itemCount: filteredVideos.length,
-                  itemBuilder: (context, index) {
-                    final video = filteredVideos[index];
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => VideoPlayerScreen(
-                              videoId: video['videoId']!,
-                              title: video['title']!,
-                            ),
-                          ),
-                        );
-                      },
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Stack(
-                          children: [
-                            Image.network(
-                              video['thumbnail'] ?? '',
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              height: double.infinity,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  const Center(
-                                child: Icon(Icons.broken_image),
-                              ),
-                            ),
-                            Positioned(
-                              bottom: 0,
-                              left: 0,
-                              right: 0,
-                              child: Container(
-                                color: Colors.black.withOpacity(0.6),
-                                padding: const EdgeInsets.all(8),
-                                child: Text(
-                                  video['title'] ?? '',
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              top: 8,
-                              right: 8,
-                              child: IconButton(
-                                icon: Icon(
-                                  favoriteVideoIds.contains(video['videoId'])
-                                      ? Icons.favorite
-                                      : Icons.favorite_border,
-                                  color: Colors.pinkAccent,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    final id = video['videoId']!;
-                                    if (favoriteVideoIds.contains(id)) {
-                                      favoriteVideoIds.remove(id);
-                                    } else {
-                                      favoriteVideoIds.add(id);
-                                    }
-                                  });
-                                },
-                              ),
-                            ),
-                          ],
+                child: isGrid
+                    ? GridView.builder(
+                        padding: const EdgeInsets.all(12),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 20,
+                          childAspectRatio: 16 / 14,
                         ),
+                        itemCount: filteredVideos.length,
+                        itemBuilder: (context, index) {
+                          final video = filteredVideos[index];
+                          return _buildGridTile(video);
+                        },
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: filteredVideos.length,
+                        itemBuilder: (context, index) {
+                          final video = filteredVideos[index];
+                          return _buildListTile(video);
+                        },
                       ),
-                    );
-                  },
-                ),
               ),
-              // 배너 광고 표시 부분
-              if (_bannerAd != null)
-                Container(
-                  alignment: Alignment.center,
-                  width: _bannerAd.size.width.toDouble(),
-                  height: _bannerAd.size.height.toDouble(),
-                  child: AdWidget(ad: _bannerAd),
-                ),
+              Container(
+                alignment: Alignment.center,
+                width: _bannerAd.size.width.toDouble(),
+                height: _bannerAd.size.height.toDouble(),
+                child: AdWidget(ad: _bannerAd),
+              ),
             ],
           ),
         );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart'; // ✅ 권한 요청 패키지 추가
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -15,6 +16,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
+    _requestPermissions(); // ✅ 권한 요청 함수 호출
 
     _controller = AnimationController(
       vsync: this,
@@ -25,12 +27,12 @@ class _SplashScreenState extends State<SplashScreen>
       TweenSequenceItem(
         tween: Tween(begin: 0.0, end: 1.0),
         weight: 1,
-      ), // fade-in
-      TweenSequenceItem(tween: ConstantTween(1.0), weight: 2), // hold
+      ),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 2),
       TweenSequenceItem(
         tween: Tween(begin: 1.0, end: 0.0),
         weight: 1,
-      ), // fade-out
+      ),
     ]).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     _controller.forward();
@@ -42,6 +44,19 @@ class _SplashScreenState extends State<SplashScreen>
     });
   }
 
+  // ✅ 권한 요청 함수 정의
+  Future<void> _requestPermissions() async {
+    var notificationStatus = await Permission.notification.status;
+    if (!notificationStatus.isGranted) {
+      await Permission.notification.request();
+    }
+
+    var audioStatus = await Permission.audio.status;
+    if (!audioStatus.isGranted) {
+      await Permission.audio.request();
+    }
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -51,7 +66,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A), // 항상 이 배경 유지
+      backgroundColor: const Color(0xFF0F172A),
       body: Center(
         child: FadeTransition(
           opacity: _opacityAnimation,

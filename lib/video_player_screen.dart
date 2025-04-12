@@ -45,7 +45,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   void initState() {
     super.initState();
 
-    // 전체 화면 회전 허용
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.landscapeLeft,
@@ -88,7 +87,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     _countdownTimer?.cancel();
     _audioPlayer.dispose();
     _bannerAd.dispose();
-    // 기본 회전 설정으로 복구
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
     ]);
@@ -154,78 +152,75 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
 
-    return Scaffold(
-      appBar: isLandscape
-          ? null
-          : AppBar(
-              title: Text(widget.title),
-              backgroundColor: const Color(0xFF1E293B),
-              elevation: 0,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => Navigator.pop(context),
-              ),
-              centerTitle: true,
-            ),
-      backgroundColor: const Color(0xFF0F172A),
-      body: isLandscape
-          ? YoutubePlayer(
-              controller: _controller, showVideoProgressIndicator: true)
-          : Padding(
-              padding:
-                  const EdgeInsets.symmetric(vertical: 24.0, horizontal: 14.0),
-              child: Column(
-                children: [
-                  _buildVideoPlayer(),
-                  const SizedBox(height: 16),
-                  _buildTimerControls(),
-                  const SizedBox(height: 16),
-                  _buildMessageSection(),
-                ],
-              ),
-            ),
-      bottomNavigationBar: _isBannerAdReady && !isLandscape
-          ? Container(
-              height: _bannerAd.size.height.toDouble(),
-              width: _bannerAd.size.width.toDouble(),
-              alignment: Alignment.center,
-              child: AdWidget(ad: _bannerAd),
-            )
-          : null,
-    );
-  }
-
-  Widget _buildVideoPlayer() {
-    return Expanded(
-      flex: 3,
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.withOpacity(0.5), width: 2),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: YoutubePlayer(
-            controller: _controller,
-            showVideoProgressIndicator: true,
-          ),
-        ),
+    return YoutubePlayerBuilder(
+      player: YoutubePlayer(
+        controller: _controller,
+        showVideoProgressIndicator: true,
       ),
+      builder: (context, player) {
+        return Scaffold(
+          appBar: isLandscape
+              ? null
+              : AppBar(
+                  title: Text(widget.title),
+                  backgroundColor: const Color(0xFF1E293B),
+                  elevation: 0,
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  centerTitle: true,
+                ),
+          backgroundColor: const Color(0xFF0F172A),
+          body: isLandscape
+              ? player
+              : Column(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 24.0, horizontal: 14.0),
+                        child: Column(
+                          children: [
+                            player,
+                            const SizedBox(height: 16),
+                            _buildTimerControls(),
+                          ],
+                        ),
+                      ),
+                    ),
+                    _buildMessageSection(),
+                  ],
+                ),
+          bottomNavigationBar: _isBannerAdReady && !isLandscape
+              ? Container(
+                  height: _bannerAd.size.height.toDouble(),
+                  width: _bannerAd.size.width.toDouble(),
+                  alignment: Alignment.center,
+                  child: AdWidget(ad: _bannerAd),
+                )
+              : null,
+        );
+      },
     );
   }
 
   Widget _buildTimerControls() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       decoration: BoxDecoration(
         color: Colors.blueGrey.shade800,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         children: [
-          Text(
-            "타이머: ${_formatDuration(_remainingTime)}",
-            style: const TextStyle(color: Colors.white, fontSize: 18),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4.0),
+            child: Text(
+              "타이머: ${_formatDuration(_remainingTime)}",
+              style: const TextStyle(color: Colors.white, fontSize: 18),
+            ),
           ),
           const SizedBox(height: 8),
           Wrap(
@@ -236,24 +231,28 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
               _buildTimerButton("1시간", const Duration(hours: 1)),
               _buildTimerButton("10분", const Duration(minutes: 10)),
               _buildTimerButton("5분", const Duration(minutes: 5)),
-              ElevatedButton(
-                onPressed: _cancelTimer,
-                style:
-                    ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-                child: const Text("취소"),
+              SizedBox(
+                width: 75,
+                child: ElevatedButton(
+                  onPressed: _cancelTimer,
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent),
+                  child: const Text("취소"),
+                ),
               ),
             ],
           ),
+          const SizedBox(height: 4),
         ],
       ),
     );
   }
 
   Widget _buildMessageSection() {
-    return Expanded(
-      flex: 2,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
         children: [
           _buildMessageBubble(),
           _buildBubbleTail(12),
@@ -272,10 +271,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   Widget _buildTimerButton(String label, Duration duration) {
     return SizedBox(
-      width: 90,
+      width: 85,
       child: ElevatedButton(
         onPressed: () => _addTime(duration),
-        child: Text(label),
+        child: Text(
+          label,
+          softWrap: false,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 14),
+        ),
       ),
     );
   }
