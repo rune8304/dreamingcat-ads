@@ -1,37 +1,37 @@
 # ────── Flutter 관련 ──────
-.dart_tool/
-.build/
-.packages
-pubspec.lock
-.flutter-plugins
-.flutter-plugins-dependencies
+#.dart_tool/
+#.build/
+#.packages
+#pubspec.lock
+#.flutter-plugins
+#.flutter-plugins-dependencies
 
 # ────── Android 관련 ──────
-.gradle/
-android/.gradle/
-android/app/build/
-.cxx/
-captures/
-local.properties
-gradlew
-gradlew.bat
-gradle-wrapper.jar
+#.gradle/
+#android/.gradle/
+#android/app/build/
+#.cxx/
+#captures/
+#local.properties
+#gradlew
+#gradlew.bat
+#gradle-wrapper.jar
 
 # ────── iOS 관련 ──────
-ios/Flutter/App.framework
-ios/Flutter/Flutter.framework
+#ios/Flutter/App.framework
+#ios/Flutter/Flutter.framework
 
 # ────── 서명 키 관련 (절대 커밋 금지!) ──────
-key.properties
-**/*.keystore
-**/*.jks
+#key.properties
+#**/*.keystore
+#**/*.jks
 
 # ────── 개발 도구 설정 ──────
-.vscode/
-.idea/
+#.vscode/
+#.idea/
 
 # ────── 시스템/기타 ──────
-.DS_Store
-Thumbs.db
-*.iml
-*.env
+#.DS_Store
+#Thumbs.db
+#*.iml
+#*.env

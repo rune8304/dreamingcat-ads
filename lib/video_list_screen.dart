@@ -182,11 +182,8 @@ class _VideoListScreenState extends State<VideoListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<QuerySnapshot>(
-      future: FirebaseFirestore.instance
-          .collection('videos')
-          .orderBy('order')
-          .get(),
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('videos').snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
@@ -211,10 +208,20 @@ class _VideoListScreenState extends State<VideoListScreen> {
             'thumbnail': data['thumbnail'] ?? '',
             'category':
                 (data['category'] ?? '').toString().trim().toLowerCase(),
-            'order': data['order'] ?? '',
+            'order': data['order'],
+            'createdAt': data['createdAt']
           };
         }).toList();
-        print("💡 전체 영상 목록: $allVideos");
+
+        // ✅ order가 null인 항목은 맨 앞으로 정렬
+        allVideos.sort((a, b) {
+          final orderA = a['order'];
+          final orderB = b['order'];
+          if (orderA == null && orderB != null) return -1;
+          if (orderA != null && orderB == null) return 1;
+          if (orderA == null && orderB == null) return 0;
+          return orderA.compareTo(orderB);
+        });
 
         final baseFilteredVideos = selectedCategory == '전체'
             ? allVideos

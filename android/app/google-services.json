@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:674564067084:android:7517dc6e7d8899211c0329",
+        "mobilesdk_app_id": "1:674564067084:android:821e7ec3dff064391c0329",
         "android_client_info": {
-          "package_name": "com.example.dreamingcat"
+          "package_name": "com.dreamforest.dreamingcat"
         }
       },
       "oauth_client": [],
@@ -22,7 +22,8 @@
         "appinvite_service": {
           "other_platform_oauth_client": []
         }
-      }
+      },
+      "admob_app_id": "ca-app-pub-7625356414808879~1824871493"
     }
   ],
   "configuration_version": "1"

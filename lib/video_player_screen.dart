@@ -151,6 +151,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   Widget build(BuildContext context) {
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final spacingSmall = screenHeight * 0.03; // 약 2%
+    final spacingLarge = screenHeight * 0.07; // 약 5%
 
     return YoutubePlayerBuilder(
       player: YoutubePlayer(
@@ -176,20 +179,30 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
               ? player
               : Column(
                   children: [
-                    Expanded(
-                      flex: 2,
+                    // 🎬 유튜브 플레이어
+                    SizedBox(
+                      width: double.infinity,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 24.0, horizontal: 14.0),
-                        child: Column(
-                          children: [
-                            player,
-                            const SizedBox(height: 16),
-                            _buildTimerControls(),
-                          ],
+                        padding: EdgeInsets.symmetric(
+                          vertical: spacingSmall,
+                          horizontal: 14.0,
+                        ),
+                        child: AspectRatio(
+                          aspectRatio: 16 / 11,
+                          child: player,
                         ),
                       ),
                     ),
+
+                    // ⏱️ 타이머 (위와 아래 간격 포함)
+                    SizedBox(height: spacingSmall),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Center(child: _buildTimerControls()),
+                    ),
+                    SizedBox(height: spacingLarge), // 타이머 ↔ 고양이
+
+                    // 🐱 고양이 & 말풍선
                     _buildMessageSection(),
                   ],
                 ),

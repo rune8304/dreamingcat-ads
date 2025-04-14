@@ -1,0 +1,2 @@
+C:/Users/i/dreamingcat_new/android/app/.cxx/RelWithDebInfo/6045v2f5/arm64-v8a/CMakeFiles/edit_cache.dir
+C:/Users/i/dreamingcat_new/android/app/.cxx/RelWithDebInfo/6045v2f5/arm64-v8a/CMakeFiles/rebuild_cache.dir
