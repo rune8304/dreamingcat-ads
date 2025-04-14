@@ -32,8 +32,8 @@ android {
         applicationId = "com.dreamforest.dreamingcat" // ← 반드시 namespace와 동일하게!
         minSdk = 21
         targetSdk = 33
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.0.1"
     }
 
     signingConfigs {
