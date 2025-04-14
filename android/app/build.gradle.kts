@@ -16,7 +16,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.dreamforest.dreamingcat" // ← 패키지명 통일
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 34
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -31,8 +31,8 @@ android {
     defaultConfig {
         applicationId = "com.dreamforest.dreamingcat" // ← 반드시 namespace와 동일하게!
         minSdk = 21
-        targetSdk = 33
-        versionCode = 2
+        targetSdk = 34
+        versionCode = 3
         versionName = "1.0.1"
     }
 
