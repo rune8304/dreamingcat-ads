@@ -21,13 +21,22 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: '꿈꾸는고양이',
-      theme: ThemeData.dark(),
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        scaffoldBackgroundColor: const Color(0xFF0F172A),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF1E293B), // 앱바 색상 통일
+          foregroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+        ),
+        useMaterial3: false,
+      ),
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
-        '/home': (context) => VideoListScreen(),
+        '/home': (context) => const VideoListScreen(), // ← const 빠뜨리지 않게!
       },
     );
-  } // ← ✅ 이 중괄호가 누락됐던 부분!
+  }
 }

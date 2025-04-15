@@ -65,7 +65,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     _bannerAd = BannerAd(
       adUnitId: 'ca-app-pub-7625356414808879/2062467221',
       size: AdSize.banner,
-      request: AdRequest(),
+      request: const AdRequest(),
       listener: BannerAdListener(
         onAdLoaded: (_) {
           setState(() {
@@ -139,21 +139,20 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   }
 
   String _formatDuration(Duration duration) {
-    final String hours = duration.inHours.toString().padLeft(2, '0');
-    final String minutes =
-        duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final String seconds =
-        duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+    final hours = duration.inHours.toString().padLeft(2, '0');
+    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
     return "$hours:$minutes:$seconds";
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final spacingSmall = screenHeight * 0.03; // 약 2%
-    final spacingLarge = screenHeight * 0.07; // 약 5%
+
+    final spacingSmall = screenHeight * 0.02; // 약 2%
+    final spacingLarge = screenHeight * 0.05; // 약 5%
 
     return YoutubePlayerBuilder(
       player: YoutubePlayer(
@@ -179,30 +178,29 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
               ? player
               : Column(
                   children: [
-                    // 🎬 유튜브 플레이어
+                    // 🎬 유튜브 플레이어 (비율 조절)
                     SizedBox(
                       width: double.infinity,
                       child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          vertical: spacingSmall,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 16.0,
                           horizontal: 14.0,
                         ),
                         child: AspectRatio(
-                          aspectRatio: 16 / 11,
+                          aspectRatio: 16 / 12,
                           child: player,
                         ),
                       ),
                     ),
 
-                    // ⏱️ 타이머 (위와 아래 간격 포함)
                     SizedBox(height: spacingSmall),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Center(child: _buildTimerControls()),
-                    ),
-                    SizedBox(height: spacingLarge), // 타이머 ↔ 고양이
 
-                    // 🐱 고양이 & 말풍선
+                    // ⏱️ 타이머
+                    Center(child: _buildTimerControls()),
+
+                    SizedBox(height: spacingLarge),
+
+                    // 🐱 말풍선+고양이
                     _buildMessageSection(),
                   ],
                 ),
@@ -255,7 +253,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 4),
         ],
       ),
     );

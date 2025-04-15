@@ -16,7 +16,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.dreamforest.dreamingcat" // ← 패키지명 통일
-    compileSdk = 34
+    compileSdk = 35
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -31,8 +31,8 @@ android {
     defaultConfig {
         applicationId = "com.dreamforest.dreamingcat" // ← 반드시 namespace와 동일하게!
         minSdk = 21
-        targetSdk = 34
-        versionCode = 3
+        targetSdk = 35
+        versionCode = 4
         versionName = "1.0.1"
     }
 

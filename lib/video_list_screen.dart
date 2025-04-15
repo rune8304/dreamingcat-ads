@@ -249,7 +249,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'v1.0.0',
+                  'v1.0.1',
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.4),
                     fontSize: 12,
