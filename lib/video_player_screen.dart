@@ -41,6 +41,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   late BannerAd _bannerAd;
   bool _isBannerAdReady = false;
 
+  // ✅ 절전 상태 관련 변수
+  bool _isDimmed = false;
+  bool _manualDimToggle = false;
+
   @override
   void initState() {
     super.initState();
@@ -103,6 +107,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   void _cancelTimer() {
     setState(() {
       _remainingTime = Duration.zero;
+      _isDimmed = false;
     });
     _countdownTimer?.cancel();
   }
@@ -114,12 +119,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         timer.cancel();
         setState(() {
           _remainingTime = Duration.zero;
+          if (!_manualDimToggle) _isDimmed = false; // 자동 해제
         });
         _alarmRepeatCount = 0;
         _playAlarmRepeatedly();
       } else {
         setState(() {
           _remainingTime -= const Duration(seconds: 1);
+          if (_remainingTime.inSeconds == 5 * 60 && !_manualDimToggle) {
+            _isDimmed = true; // 자동 진입
+          }
         });
       }
     });
@@ -174,44 +183,62 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   centerTitle: true,
                 ),
           backgroundColor: const Color(0xFF0F172A),
-          body: isLandscape
-              ? player
-              : Column(
-                  children: [
-                    // 🎬 유튜브 플레이어 (비율 조절)
-                    SizedBox(
-                      width: double.infinity,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 16.0,
-                          horizontal: 14.0,
-                        ),
-                        child: AspectRatio(
-                          aspectRatio: 16 / 12,
-                          child: player,
-                        ),
+          body: Stack(
+            children: [
+              Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 16.0, horizontal: 14.0),
+                      child: AspectRatio(
+                        aspectRatio: 16 / 12,
+                        child: player,
                       ),
                     ),
+                  ),
+                  SizedBox(height: spacingSmall),
+                  Center(child: _buildTimerControls()),
+                  SizedBox(height: spacingLarge),
+                  _buildMessageSection(),
 
-                    SizedBox(height: spacingSmall),
+                  // 👇 광고를 Column 안으로 이동 (절전모드 오버레이 위로 덮일 수 있도록)
+                  if (_isBannerAdReady && !isLandscape)
+                    Container(
+                      height: _bannerAd.size.height.toDouble(),
+                      width: _bannerAd.size.width.toDouble(),
+                      alignment: Alignment.center,
+                      child: AdWidget(ad: _bannerAd),
+                    ),
+                ],
+              ),
 
-                    // ⏱️ 타이머
-                    Center(child: _buildTimerControls()),
-
-                    SizedBox(height: spacingLarge),
-
-                    // 🐱 말풍선+고양이
-                    _buildMessageSection(),
-                  ],
+              // 🌙 절전모드 오버레이
+              if (_isDimmed)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black.withOpacity(0.85), // 불투명도 강화
+                  ),
                 ),
-          bottomNavigationBar: _isBannerAdReady && !isLandscape
-              ? Container(
-                  height: _bannerAd.size.height.toDouble(),
-                  width: _bannerAd.size.width.toDouble(),
-                  alignment: Alignment.center,
-                  child: AdWidget(ad: _bannerAd),
-                )
-              : null,
+
+              // 🌘 수동 절전 토글 버튼은 항상 위에 고정
+              if (!isLandscape)
+                Positioned(
+                  bottom: 20,
+                  right: 16,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _isDimmed = !_isDimmed;
+                        _manualDimToggle = _isDimmed;
+                      });
+                    },
+                    child: Text(_isDimmed ? "절전 해제" : "절전 모드"),
+                  ),
+                ),
+            ],
+          ),
         );
       },
     );
