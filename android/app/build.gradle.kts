@@ -32,7 +32,7 @@ android {
         applicationId = "com.dreamforest.dreamingcat" // ← 반드시 namespace와 동일하게!
         minSdk = 21
         targetSdk = 35
-        versionCode = 4
+        versionCode = 6
         versionName = "1.0.1"
     }
 

@@ -4,7 +4,7 @@
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 
     <application
-        android:label="dreamingcat_new"
+        android:label="꿈꾸는 고양이"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 
