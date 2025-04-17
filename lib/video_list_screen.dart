@@ -19,7 +19,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
   final List<String> categories = ['전체', '비', '파도', '장작', '풀벌레', '도시'];
 
   final BannerAd _bannerAd = BannerAd(
-    adUnitId: 'ca-app-pub-7625356414808879/2062467221',
+    adUnitId: 'ca-app-pub-3940256099942544/6300978111',
     size: AdSize.banner,
     request: AdRequest(),
     listener: BannerAdListener(),
@@ -180,6 +180,30 @@ class _VideoListScreenState extends State<VideoListScreen> {
     );
   }
 
+  Widget _buildCategoryButton(
+      String label, bool isSelected, VoidCallback onPressed) {
+    return SizedBox(
+      height: 20,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor:
+              isSelected ? Colors.blueAccent : Colors.blueGrey.shade700,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8), // 네모 스타일!
+          ),
+          elevation: 0,
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(fontSize: 14),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
@@ -193,7 +217,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
 
         if (snapshot.hasError) {
           return Scaffold(
-            body: Center(child: Text('에러 발생: \${snapshot.error}')),
+            body: Center(child: Text('에러 발생: ${snapshot.error}')),
           );
         }
 
@@ -213,7 +237,6 @@ class _VideoListScreenState extends State<VideoListScreen> {
           };
         }).toList();
 
-        // ✅ order가 null인 항목은 맨 앞으로 정렬
         allVideos.sort((a, b) {
           final orderA = a['order'];
           final orderB = b['order'];
@@ -295,9 +318,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
                     child: Center(
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
+                            horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
                           color: Colors.black.withOpacity(0.4),
                           borderRadius: BorderRadius.circular(20),
@@ -321,10 +342,10 @@ class _VideoListScreenState extends State<VideoListScreen> {
                     final isSelected = selectedCategory == category;
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: ChoiceChip(
-                        label: Text(category),
-                        selected: isSelected,
-                        onSelected: (_) {
+                      child: _buildCategoryButton(
+                        category,
+                        isSelected,
+                        () {
                           setState(() {
                             selectedCategory = category;
                           });

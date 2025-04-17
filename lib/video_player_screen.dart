@@ -41,7 +41,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   late BannerAd _bannerAd;
   bool _isBannerAdReady = false;
 
-  // ✅ 절전 상태 관련 변수
   bool _isDimmed = false;
   bool _manualDimToggle = false;
 
@@ -67,7 +66,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     });
 
     _bannerAd = BannerAd(
-      adUnitId: 'ca-app-pub-7625356414808879/2062467221',
+      adUnitId: 'ca-app-pub-3940256099942544/6300978111',
       size: AdSize.banner,
       request: const AdRequest(),
       listener: BannerAdListener(
@@ -119,7 +118,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         timer.cancel();
         setState(() {
           _remainingTime = Duration.zero;
-          if (!_manualDimToggle) _isDimmed = false; // 자동 해제
+          if (!_manualDimToggle) _isDimmed = false;
         });
         _alarmRepeatCount = 0;
         _playAlarmRepeatedly();
@@ -127,7 +126,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         setState(() {
           _remainingTime -= const Duration(seconds: 1);
           if (_remainingTime.inSeconds == 5 * 60 && !_manualDimToggle) {
-            _isDimmed = true; // 자동 진입
+            _isDimmed = true;
           }
         });
       }
@@ -160,8 +159,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
 
-    final spacingSmall = screenHeight * 0.02; // 약 2%
-    final spacingLarge = screenHeight * 0.05; // 약 5%
+    final spacingSmall = screenHeight * 0.02;
+    final spacingLarge = screenHeight * 0.05;
 
     return YoutubePlayerBuilder(
       player: YoutubePlayer(
@@ -202,27 +201,24 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   Center(child: _buildTimerControls()),
                   SizedBox(height: spacingLarge),
                   _buildMessageSection(),
-
-                  // 👇 광고를 Column 안으로 이동 (절전모드 오버레이 위로 덮일 수 있도록)
-                  if (_isBannerAdReady && !isLandscape)
-                    Container(
-                      height: _bannerAd.size.height.toDouble(),
-                      width: _bannerAd.size.width.toDouble(),
-                      alignment: Alignment.center,
-                      child: AdWidget(ad: _bannerAd),
-                    ),
                 ],
               ),
-
-              // 🌙 절전모드 오버레이
               if (_isDimmed)
                 Positioned.fill(
                   child: Container(
-                    color: Colors.black.withOpacity(0.85), // 불투명도 강화
+                    color: Colors.black,
+                    child: const Center(
+                      child: Text(
+                        '절전모드 중',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-
-              // 🌘 수동 절전 토글 버튼은 항상 위에 고정
               if (!isLandscape)
                 Positioned(
                   bottom: 20,
@@ -239,6 +235,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                 ),
             ],
           ),
+          bottomNavigationBar: _isBannerAdReady && !isLandscape
+              ? Container(
+                  color: const Color(0xFF0F172A),
+                  height: _bannerAd.size.height.toDouble(),
+                  child: AdWidget(ad: _bannerAd),
+                )
+              : null,
         );
       },
     );
