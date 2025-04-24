@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'video_player_screen.dart';
 
 class VideoListScreen extends StatefulWidget {
@@ -14,9 +15,9 @@ class _VideoListScreenState extends State<VideoListScreen> {
   String selectedCategory = '전체';
   bool isGrid = true;
   bool showFavoritesOnly = false;
-  List<String> favoriteVideoIds = [];
+  List<String> favoriteVideoUrls = [];
 
-  final List<String> categories = ['전체', '비', '파도', '장작', '풀벌레', '도시'];
+  final List<String> categories = ['전체', '비', '바다', '바람', '불', '풀벌레', '도시'];
 
   final BannerAd _bannerAd = BannerAd(
     adUnitId: 'ca-app-pub-3940256099942544/6300978111',
@@ -28,13 +29,54 @@ class _VideoListScreenState extends State<VideoListScreen> {
   @override
   void initState() {
     super.initState();
+    _loadFavorites();
     _bannerAd.load();
+  }
+
+  Future<void> _loadFavorites() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      favoriteVideoUrls = prefs.getStringList('favorites') ?? [];
+    });
+  }
+
+  Future<void> _toggleFavorite(String url) async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      if (favoriteVideoUrls.contains(url)) {
+        favoriteVideoUrls.remove(url);
+      } else {
+        favoriteVideoUrls.add(url);
+      }
+      prefs.setStringList('favorites', favoriteVideoUrls);
+    });
   }
 
   @override
   void dispose() {
     _bannerAd.dispose();
     super.dispose();
+  }
+
+  Widget _buildCategoryButton(
+      String label, bool isSelected, VoidCallback onPressed) {
+    return SizedBox(
+      height: 30,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor:
+              isSelected ? Colors.blueAccent : Colors.blueGrey.shade700,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          elevation: 0,
+        ),
+        child: Text(label, style: const TextStyle(fontSize: 14)),
+      ),
+    );
   }
 
   Widget _buildGridTile(Map<String, dynamic> video) {
@@ -44,8 +86,8 @@ class _VideoListScreenState extends State<VideoListScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => VideoPlayerScreen(
-              videoId: video['videoId']!,
-              title: video['title']!,
+              videoUrl: video['videoUrl'] ?? '',
+              title: video['title'] ?? '',
             ),
           ),
         );
@@ -59,9 +101,8 @@ class _VideoListScreenState extends State<VideoListScreen> {
               fit: BoxFit.cover,
               width: double.infinity,
               height: double.infinity,
-              errorBuilder: (context, error, stackTrace) => const Center(
-                child: Icon(Icons.broken_image),
-              ),
+              errorBuilder: (context, error, stackTrace) =>
+                  const Center(child: Icon(Icons.broken_image)),
             ),
             Positioned(
               bottom: 0,
@@ -83,21 +124,12 @@ class _VideoListScreenState extends State<VideoListScreen> {
               right: 8,
               child: IconButton(
                 icon: Icon(
-                  favoriteVideoIds.contains(video['videoId'])
+                  favoriteVideoUrls.contains(video['videoUrl'])
                       ? Icons.favorite
                       : Icons.favorite_border,
                   color: Colors.pinkAccent,
                 ),
-                onPressed: () {
-                  setState(() {
-                    final id = video['videoId']!;
-                    if (favoriteVideoIds.contains(id)) {
-                      favoriteVideoIds.remove(id);
-                    } else {
-                      favoriteVideoIds.add(id);
-                    }
-                  });
-                },
+                onPressed: () => _toggleFavorite(video['videoUrl'] ?? ''),
               ),
             ),
           ],
@@ -113,8 +145,8 @@ class _VideoListScreenState extends State<VideoListScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => VideoPlayerScreen(
-              videoId: video['videoId']!,
-              title: video['title']!,
+              videoUrl: video['videoUrl'] ?? '',
+              title: video['title'] ?? '',
             ),
           ),
         );
@@ -158,47 +190,14 @@ class _VideoListScreenState extends State<VideoListScreen> {
             ),
             IconButton(
               icon: Icon(
-                favoriteVideoIds.contains(video['videoId'])
+                favoriteVideoUrls.contains(video['videoUrl'])
                     ? Icons.favorite
                     : Icons.favorite_border,
                 color: Colors.pinkAccent,
               ),
-              onPressed: () {
-                setState(() {
-                  final id = video['videoId']!;
-                  if (favoriteVideoIds.contains(id)) {
-                    favoriteVideoIds.remove(id);
-                  } else {
-                    favoriteVideoIds.add(id);
-                  }
-                });
-              },
+              onPressed: () => _toggleFavorite(video['videoUrl'] ?? ''),
             )
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryButton(
-      String label, bool isSelected, VoidCallback onPressed) {
-    return SizedBox(
-      height: 20,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor:
-              isSelected ? Colors.blueAccent : Colors.blueGrey.shade700,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8), // 네모 스타일!
-          ),
-          elevation: 0,
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(fontSize: 14),
         ),
       ),
     );
@@ -217,18 +216,16 @@ class _VideoListScreenState extends State<VideoListScreen> {
 
         if (snapshot.hasError) {
           return Scaffold(
-            body: Center(child: Text('에러 발생: ${snapshot.error}')),
+            body: Center(child: Text('에러 발생: \${snapshot.error}')),
           );
         }
 
         final videoDocs = snapshot.data?.docs ?? [];
         final allVideos = videoDocs.map((doc) {
           final data = doc.data() as Map<String, dynamic>;
-          final url = data['url'] ?? '';
-          final videoId = Uri.tryParse(url)?.queryParameters['v'] ?? '';
           return {
             'title': data['title'] ?? '',
-            'videoId': videoId,
+            'videoUrl': data['url'] ?? '',
             'thumbnail': data['thumbnail'] ?? '',
             'category':
                 (data['category'] ?? '').toString().trim().toLowerCase(),
@@ -238,12 +235,12 @@ class _VideoListScreenState extends State<VideoListScreen> {
         }).toList();
 
         allVideos.sort((a, b) {
-          final orderA = a['order'];
-          final orderB = b['order'];
-          if (orderA == null && orderB != null) return -1;
-          if (orderA != null && orderB == null) return 1;
-          if (orderA == null && orderB == null) return 0;
-          return orderA.compareTo(orderB);
+          final createdAtA = a['createdAt'];
+          final createdAtB = b['createdAt'];
+          if (createdAtA == null && createdAtB != null) return 1;
+          if (createdAtA != null && createdAtB == null) return -1;
+          if (createdAtA == null && createdAtB == null) return 0;
+          return createdAtB.compareTo(createdAtA);
         });
 
         final baseFilteredVideos = selectedCategory == '전체'
@@ -255,7 +252,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
 
         final filteredVideos = showFavoritesOnly
             ? baseFilteredVideos
-                .where((v) => favoriteVideoIds.contains(v['videoId']))
+                .where((v) => favoriteVideoUrls.contains(v['videoUrl']))
                 .toList()
             : baseFilteredVideos;
 

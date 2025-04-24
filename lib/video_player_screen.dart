@@ -1,18 +1,19 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:video_player/video_player.dart';
 import 'package:lottie/lottie.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/services.dart';
+import 'package:just_audio/just_audio.dart' as ja;
 
 class VideoPlayerScreen extends StatefulWidget {
-  final String videoId;
+  final String videoUrl;
   final String title;
 
   const VideoPlayerScreen({
     super.key,
-    required this.videoId,
+    required this.videoUrl,
     required this.title,
   });
 
@@ -20,8 +21,9 @@ class VideoPlayerScreen extends StatefulWidget {
   State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
 }
 
-class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
-  late YoutubePlayerController _controller;
+class _VideoPlayerScreenState extends State<VideoPlayerScreen>
+    with WidgetsBindingObserver {
+  late VideoPlayerController _controller;
   final List<String> _messages = [
     '나와 함께 꿈나라로 가자 💫',
     '오늘 하루도 수고했어 ✨',
@@ -34,12 +36,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   Duration _remainingTime = const Duration();
   Timer? _countdownTimer;
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  final AudioPlayer _alarmPlayer = AudioPlayer();
   int _alarmRepeatCount = 0;
   final int _maxRepeats = 3;
 
   late BannerAd _bannerAd;
   bool _isBannerAdReady = false;
+
+  final ja.AudioPlayer _bgAudioPlayer = ja.AudioPlayer();
 
   bool _isDimmed = false;
   bool _manualDimToggle = false;
@@ -47,6 +51,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
@@ -54,10 +59,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       DeviceOrientation.landscapeRight,
     ]);
 
-    _controller = YoutubePlayerController(
-      initialVideoId: widget.videoId,
-      flags: const YoutubePlayerFlags(autoPlay: true, mute: false),
-    );
+    _controller = VideoPlayerController.network(widget.videoUrl)
+      ..initialize().then((_) {
+        setState(() {});
+        _controller.play();
+        _controller.setLooping(true);
+      });
 
     _messageTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
       setState(() {
@@ -85,15 +92,28 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
     _messageTimer.cancel();
     _countdownTimer?.cancel();
-    _audioPlayer.dispose();
+    _alarmPlayer.dispose();
+    _bgAudioPlayer.dispose();
     _bannerAd.dispose();
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-    ]);
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _controller.pause();
+      _bgAudioPlayer.setUrl(widget.videoUrl);
+      _bgAudioPlayer.setLoopMode(ja.LoopMode.one);
+      _bgAudioPlayer.play();
+    } else if (state == AppLifecycleState.resumed) {
+      _bgAudioPlayer.stop();
+      _controller.play();
+    }
   }
 
   void _addTime(Duration duration) {
@@ -118,14 +138,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         timer.cancel();
         setState(() {
           _remainingTime = Duration.zero;
-          if (!_manualDimToggle) _isDimmed = false;
+          _isDimmed = false;
         });
         _alarmRepeatCount = 0;
         _playAlarmRepeatedly();
       } else {
         setState(() {
           _remainingTime -= const Duration(seconds: 1);
-          if (_remainingTime.inSeconds == 5 * 60 && !_manualDimToggle) {
+          if (_remainingTime.inSeconds == 60 * 55 && !_manualDimToggle) {
             _isDimmed = true;
           }
         });
@@ -136,7 +156,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   void _playAlarmRepeatedly() async {
     if (_alarmRepeatCount >= _maxRepeats) return;
     try {
-      await _audioPlayer.play(AssetSource('sounds/alarm.mp3'));
+      await _alarmPlayer.play(AssetSource('sounds/alarm.mp3'));
       _alarmRepeatCount++;
       Future.delayed(const Duration(seconds: 33), () {
         _playAlarmRepeatedly();
@@ -155,20 +175,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
 
-    final spacingSmall = screenHeight * 0.02;
-    final spacingLarge = screenHeight * 0.05;
-
-    return YoutubePlayerBuilder(
-      player: YoutubePlayer(
-        controller: _controller,
-        showVideoProgressIndicator: true,
-      ),
-      builder: (context, player) {
-        return Scaffold(
+    return Stack(
+      children: [
+        Scaffold(
           appBar: isLandscape
               ? null
               : AppBar(
@@ -182,57 +194,22 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   centerTitle: true,
                 ),
           backgroundColor: const Color(0xFF0F172A),
-          body: Stack(
+          body: Column(
             children: [
-              Column(
-                children: [
-                  SizedBox(
-                    width: double.infinity,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 16.0, horizontal: 14.0),
-                      child: AspectRatio(
-                        aspectRatio: 16 / 12,
-                        child: player,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: spacingSmall),
-                  Center(child: _buildTimerControls()),
-                  SizedBox(height: spacingLarge),
-                  _buildMessageSection(),
-                ],
-              ),
-              if (_isDimmed)
-                Positioned.fill(
-                  child: Container(
-                    color: Colors.black,
-                    child: const Center(
-                      child: Text(
-                        '절전모드 중',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
+              if (_controller.value.isInitialized)
+                AspectRatio(
+                  aspectRatio: _controller.value.aspectRatio,
+                  child: VideoPlayer(_controller),
+                )
+              else
+                const Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: CircularProgressIndicator(),
                 ),
-              if (!isLandscape)
-                Positioned(
-                  bottom: 20,
-                  right: 16,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        _isDimmed = !_isDimmed;
-                        _manualDimToggle = _isDimmed;
-                      });
-                    },
-                    child: Text(_isDimmed ? "절전 해제" : "절전 모드"),
-                  ),
-                ),
+              const SizedBox(height: 16),
+              Center(child: _buildTimerControls()),
+              const SizedBox(height: 30),
+              _buildMessageSection(),
             ],
           ),
           bottomNavigationBar: _isBannerAdReady && !isLandscape
@@ -242,8 +219,29 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   child: AdWidget(ad: _bannerAd),
                 )
               : null,
-        );
-      },
+        ),
+        if (_isDimmed)
+          Positioned.fill(
+            child: Container(color: Colors.black.withOpacity(0.95)),
+          ),
+        if (!isLandscape)
+          Positioned(
+            bottom: 80,
+            right: 20,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 40, 132, 175),
+              ),
+              onPressed: () {
+                setState(() {
+                  _isDimmed = !_isDimmed;
+                  _manualDimToggle = _isDimmed;
+                });
+              },
+              child: Text(_isDimmed ? "절전 해제" : "절전 모드"),
+            ),
+          ),
+      ],
     );
   }
 
@@ -277,13 +275,30 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                 child: ElevatedButton(
                   onPressed: _cancelTimer,
                   style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.redAccent),
+                    backgroundColor: Colors.redAccent,
+                  ),
                   child: const Text("취소"),
                 ),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTimerButton(String label, Duration duration) {
+    return SizedBox(
+      width: 85,
+      child: ElevatedButton(
+        onPressed: () => _addTime(duration),
+        child: Text(
+          label,
+          softWrap: false,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 14),
+        ),
       ),
     );
   }
@@ -305,22 +320,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             repeat: true,
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTimerButton(String label, Duration duration) {
-    return SizedBox(
-      width: 85,
-      child: ElevatedButton(
-        onPressed: () => _addTime(duration),
-        child: Text(
-          label,
-          softWrap: false,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 14),
-        ),
       ),
     );
   }
