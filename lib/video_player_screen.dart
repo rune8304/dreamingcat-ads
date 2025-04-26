@@ -205,6 +205,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   Widget build(BuildContext context) {
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
+    final screenWidth = MediaQuery.of(context).size.width; // ✅ 추가
+    final videoHeight = screenWidth * 9 / 16; // ✅ 추가
 
     return Stack(
       children: [
@@ -225,8 +227,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
           body: Column(
             children: [
               if (_controller.value.isInitialized)
-                AspectRatio(
-                  aspectRatio: _controller.value.aspectRatio,
+                SizedBox(
+                  width: screenWidth, // ✅ 수정
+                  height: videoHeight, // ✅ 수정
                   child: VideoPlayer(_controller),
                 )
               else
