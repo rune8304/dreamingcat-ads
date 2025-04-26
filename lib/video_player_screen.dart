@@ -6,6 +6,8 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart' as ja;
+import 'package:flutter_local_notifications/flutter_local_notifications.dart'; // ✅ 추가
+import 'main.dart'; // ✅ flutterLocalNotificationsPlugin 가져오기 위해 import
 
 class VideoPlayerScreen extends StatefulWidget {
   final String videoUrl;
@@ -24,6 +26,9 @@ class VideoPlayerScreen extends StatefulWidget {
 class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     with WidgetsBindingObserver {
   late VideoPlayerController _controller;
+  final ja.AudioPlayer _bgAudioPlayer = ja.AudioPlayer();
+  final AudioPlayer _alarmPlayer = AudioPlayer();
+
   final List<String> _messages = [
     '나와 함께 꿈나라로 가자 💫',
     '오늘 하루도 수고했어 ✨',
@@ -33,17 +38,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   ];
   int _messageIndex = 0;
   late Timer _messageTimer;
-
-  Duration _remainingTime = const Duration();
   Timer? _countdownTimer;
-  final AudioPlayer _alarmPlayer = AudioPlayer();
+  Duration _remainingTime = const Duration();
   int _alarmRepeatCount = 0;
   final int _maxRepeats = 3;
 
   late BannerAd _bannerAd;
   bool _isBannerAdReady = false;
-
-  final ja.AudioPlayer _bgAudioPlayer = ja.AudioPlayer();
 
   bool _isDimmed = false;
   bool _manualDimToggle = false;
@@ -94,11 +95,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
+    _bgAudioPlayer.dispose();
+    _alarmPlayer.dispose();
     _messageTimer.cancel();
     _countdownTimer?.cancel();
-    _alarmPlayer.dispose();
-    _bgAudioPlayer.dispose();
     _bannerAd.dispose();
+    _cancelNotification(); // ✅ 종료 시 알림 끄기
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     super.dispose();
   }
@@ -110,10 +112,38 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       _bgAudioPlayer.setUrl(widget.videoUrl);
       _bgAudioPlayer.setLoopMode(ja.LoopMode.one);
       _bgAudioPlayer.play();
+      _showNotification(); // ✅ 앱 내려가면 알림 띄우기
     } else if (state == AppLifecycleState.resumed) {
       _bgAudioPlayer.stop();
       _controller.play();
+      _cancelNotification(); // ✅ 앱 복귀하면 알림 끄기
     }
+  }
+
+  Future<void> _showNotification() async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'dreaming_cat_channel_id',
+      '꿈꾸는 고양이 수면 알림',
+      channelDescription: '수면 중에도 재생이 유지됩니다',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+    );
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+    );
+
+    await flutterLocalNotificationsPlugin.show(
+      0,
+      '꿈꾸는 고양이',
+      '영상 소리 재생 중입니다...',
+      platformChannelSpecifics,
+    );
+  }
+
+  Future<void> _cancelNotification() async {
+    await flutterLocalNotificationsPlugin.cancel(0);
   }
 
   void _addTime(Duration duration) {
@@ -158,9 +188,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     try {
       await _alarmPlayer.play(AssetSource('sounds/alarm.mp3'));
       _alarmRepeatCount++;
-      Future.delayed(const Duration(seconds: 33), () {
-        _playAlarmRepeatedly();
-      });
+      Future.delayed(const Duration(seconds: 33), _playAlarmRepeatedly);
     } catch (e) {
       print("🔊 알람 재생 실패: $e");
     }

@@ -15,13 +15,14 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.dreamforest.dreamingcat" // ← 패키지명 통일
+    namespace = "com.dreamforest.dreamingcat"
     compileSdk = 35
     ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true // ✅ 추가
     }
 
     kotlinOptions {
@@ -29,7 +30,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.dreamforest.dreamingcat" // ← 반드시 namespace와 동일하게!
+        applicationId = "com.dreamforest.dreamingcat"
         minSdk = 21
         targetSdk = 35
         versionCode = 7
@@ -47,7 +48,7 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release") // 🔐 릴리즈용 서명
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -55,13 +56,16 @@ android {
                 "proguard-rules.pro"
             )
         }
-
         debug {
-            signingConfig = signingConfigs.getByName("release") // 디버그도 동일 키로
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5") // ✅ 추가
 }
