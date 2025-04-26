@@ -18,8 +18,8 @@ class _VideoListScreenState extends State<VideoListScreen> {
   bool showFavoritesOnly = false;
   List<String> favoriteVideoUrls = [];
   BannerAd? _bannerAd;
-
   Map<String, dynamic>? latestYoutubeVideo;
+  bool _isUpdateDialogShown = false; // ✅ 추가
 
   final List<String> categories = ['전체', '비', '바다', '바람', '불', '풀벌레', '도시'];
 
@@ -29,6 +29,39 @@ class _VideoListScreenState extends State<VideoListScreen> {
     _loadFavorites();
     _loadBannerAd();
     _loadLatestYoutubeVideo();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isUpdateDialogShown) {
+        _showUpdateDialog();
+        _isUpdateDialogShown = true;
+      }
+    });
+  }
+
+  void _showUpdateDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B).withOpacity(0.8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Center(
+          child: Text(
+            '업데이트 안내',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+        ),
+        content: const Text(
+          '이번 업데이트:\n\n- 유튜브 최신 영상 소개\n- 썸네일 및 UI 개선\n- 백그라운드 재생 및 알림 표시\n- 자체영상 재생기능 추가',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('확인', style: TextStyle(color: Colors.blueAccent)),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _loadFavorites() async {
@@ -86,7 +119,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: Color(0xFF3B82F6),
+        backgroundColor: const Color(0xFF3B82F6),
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         textStyle: const TextStyle(fontSize: 12),
@@ -106,7 +139,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
       style: ElevatedButton.styleFrom(
         backgroundColor: isSelected
             ? const Color.fromARGB(255, 59, 181, 238)
-            : Color(0xFF3B82F6),
+            : const Color(0xFF3B82F6),
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         textStyle: const TextStyle(fontSize: 14),
@@ -320,54 +353,51 @@ class _VideoListScreenState extends State<VideoListScreen> {
                 borderRadius: BorderRadius.circular(0),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.center, // ✅ Row를 중앙정렬!
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                      constraints: const BoxConstraints(
-                        maxWidth: 320, // ✅ 썸네일+텍스트 묶음의 최대 너비를 고정
-                      ),
-                      child: Row(
-                        mainAxisAlignment:
-                            MainAxisAlignment.center, // ✅ Row 중앙정렬 유지
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              latestYoutubeVideo?['thumbnailUrl'] ?? '',
-                              width: 120,
-                              height: 68,
-                              fit: BoxFit.cover,
-                            ),
+                    constraints: const BoxConstraints(maxWidth: 320),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(0),
+                          child: Image.network(
+                            latestYoutubeVideo?['thumbnailUrl'] ?? '',
+                            width: 120,
+                            height: 68,
+                            fit: BoxFit.cover,
                           ),
-                          const SizedBox(width: 12),
-                          // Expanded 없애고 SizedBox로 감싸
-                          SizedBox(
-                            width: 130, // 💡 텍스트 박스 가로폭 제한 (조정 가능)
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  latestYoutubeVideo?['title'] ?? '',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(width: 12),
+                        SizedBox(
+                          width: 130,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                latestYoutubeVideo?['title'] ?? '',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  latestYoutubeVideo?['description'] ?? '',
-                                  style: const TextStyle(color: Colors.white70),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                latestYoutubeVideo?['description'] ?? '',
+                                style: const TextStyle(color: Colors.white70),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ),
-                        ],
-                      )),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
