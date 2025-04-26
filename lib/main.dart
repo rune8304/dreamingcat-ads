@@ -1,16 +1,30 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'splash_screen.dart'; // ✅ 스플래시 화면 import
+import 'package:flutter_local_notifications/flutter_local_notifications.dart'; // ✅ 추가
+import 'splash_screen.dart';
 import 'video_list_screen.dart';
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin(); // ✅ 추가
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ✅ Firebase 초기화
   try {
     await Firebase.initializeApp();
     print("🔥 Firebase 초기화 성공!");
   } catch (e) {
     print("🔥 Firebase 초기화 실패: $e");
   }
+
+  // ✅ 로컬 알림 초기화
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('@mipmap/ic_launcher'); // ← 앱 아이콘
+  const InitializationSettings initializationSettings =
+      InitializationSettings(android: initializationSettingsAndroid);
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
   runApp(const MyApp());
 }
 
@@ -25,7 +39,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         scaffoldBackgroundColor: const Color(0xFF0F172A),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1E293B), // 앱바 색상 통일
+          backgroundColor: Color(0xFF1E293B),
           foregroundColor: Colors.white,
           elevation: 0,
           centerTitle: true,
@@ -35,7 +49,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
-        '/home': (context) => const VideoListScreen(), // ← const 빠뜨리지 않게!
+        '/home': (context) => const VideoListScreen(),
       },
     );
   }
