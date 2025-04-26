@@ -231,54 +231,46 @@ class _VideoListScreenState extends State<VideoListScreen> {
           borderRadius: BorderRadius.circular(12),
           color: Colors.grey[850],
         ),
-        child: Center(
-          // ✅ 추가
-          child: Container(
-            // ✅ 묶어야 진짜 중앙된다
-            constraints: const BoxConstraints(
-                maxWidth: 300), // ✅ 약간 크기 제한 주기 (너무 퍼지지 않게)
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    video['thumbnail'] ?? '',
-                    width: 120,
-                    height: 90,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      video['title'] ?? '',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      video['description'] ?? '',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.white70,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ],
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                video['thumbnail'] ?? '',
+                width: 120,
+                height: 60,
+                fit: BoxFit.cover,
+              ),
             ),
-          ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    video['title'] ?? '',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: Icon(
+                favoriteVideoUrls.contains(video['videoUrl'])
+                    ? Icons.favorite
+                    : Icons.favorite_border,
+                color: Colors.pinkAccent,
+              ),
+              onPressed: () => _toggleFavorite(video['videoUrl'] ?? ''),
+            )
+          ],
         ),
       ),
     );
