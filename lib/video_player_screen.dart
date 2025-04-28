@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart' as ja;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart'; // ✅ 추가
 import 'main.dart'; // ✅ flutterLocalNotificationsPlugin 가져오기 위해 import
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final String videoUrl;
@@ -64,6 +65,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       ..initialize().then((_) {
         setState(() {});
         _controller.play();
+        WakelockPlus.enable();
         _controller.setLooping(true);
       });
 
@@ -93,6 +95,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   @override
   void dispose() {
+    try {
+      WakelockPlus.disable();
+    } catch (e) {
+      print('Wakelock 해제 중 오류: $e');
+    }
     WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
     _bgAudioPlayer.dispose();
