@@ -2,11 +2,20 @@
 
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <application
-        android:label="꿈꾸는 고양이"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:label="꿈꾸는고양이"
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true"
+        android:stopWithTask="false"
+        android:theme="@style/LaunchTheme">
+
+        <service
+            android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
+            android:foregroundServiceType="dataSync"
+            android:exported="false" />
 
         <!-- ✅ AdMob App ID -->
         <meta-data
@@ -36,6 +45,8 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        
     </application>
 
     <queries>

@@ -24,6 +24,7 @@ dependencies:
   audio_session: ^0.1.6
   flutter_local_notifications: ^17.0.0
   wakelock_plus: ^1.1.2
+  flutter_foreground_task: 6.1.2
    
 dev_dependencies:
   flutter_test:

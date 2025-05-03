@@ -6,9 +6,10 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart' as ja;
-import 'package:flutter_local_notifications/flutter_local_notifications.dart'; // ✅ 추가
-import 'main.dart'; // ✅ flutterLocalNotificationsPlugin 가져오기 위해 import
-import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart'; // ✅ foreground task
+import 'foreground_task_handler.dart'; // ✅ handler
+import 'main.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final String videoUrl;
@@ -46,7 +47,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   late BannerAd _bannerAd;
   bool _isBannerAdReady = false;
-
   bool _isDimmed = false;
   bool _manualDimToggle = false;
 
@@ -54,6 +54,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    _startForegroundTask(); // ✅ 포그라운드 태스크 시작
 
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
@@ -65,7 +67,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       ..initialize().then((_) {
         setState(() {});
         _controller.play();
-        WakelockPlus.enable();
         _controller.setLooping(true);
       });
 
@@ -95,11 +96,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   @override
   void dispose() {
-    try {
-      WakelockPlus.disable();
-    } catch (e) {
-      print('Wakelock 해제 중 오류: $e');
-    }
     WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
     _bgAudioPlayer.dispose();
@@ -107,9 +103,25 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     _messageTimer.cancel();
     _countdownTimer?.cancel();
     _bannerAd.dispose();
-    _cancelNotification(); // ✅ 종료 시 알림 끄기
+    _cancelNotification();
+    FlutterForegroundTask.stopService(); // ✅ 포그라운드 태스크 종료
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     super.dispose();
+  }
+
+  void _startForegroundTask() async {
+    final isRunning = await FlutterForegroundTask.isRunningService;
+
+    if (!isRunning) {
+      await FlutterForegroundTask.startService(
+        notificationTitle: '꿈꾸는 고양이',
+        notificationText: '영상 재생 중...',
+        callback: startCallback,
+      );
+      print("✅ Foreground Task 실행됨");
+    } else {
+      print("ℹ️ Foreground Task 이미 실행 중");
+    }
   }
 
   @override
@@ -119,17 +131,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       _bgAudioPlayer.setUrl(widget.videoUrl);
       _bgAudioPlayer.setLoopMode(ja.LoopMode.one);
       _bgAudioPlayer.play();
-      _showNotification(); // ✅ 앱 내려가면 알림 띄우기
+      _showNotification();
     } else if (state == AppLifecycleState.resumed) {
       _bgAudioPlayer.stop();
       _controller.play();
-      _cancelNotification(); // ✅ 앱 복귀하면 알림 끄기
+      _cancelNotification();
     }
   }
 
   Future<void> _showNotification() async {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
+    const androidDetails = AndroidNotificationDetails(
       'dreaming_cat_channel_id',
       '꿈꾸는 고양이 수면 알림',
       channelDescription: '수면 중에도 재생이 유지됩니다',
@@ -137,15 +148,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       priority: Priority.high,
       icon: '@mipmap/ic_launcher',
     );
-    const NotificationDetails platformChannelSpecifics = NotificationDetails(
-      android: androidPlatformChannelSpecifics,
-    );
-
+    const platformDetails = NotificationDetails(android: androidDetails);
     await flutterLocalNotificationsPlugin.show(
       0,
       '꿈꾸는 고양이',
       '영상 소리 재생 중입니다...',
-      platformChannelSpecifics,
+      platformDetails,
     );
   }
 
@@ -202,18 +210,18 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   String _formatDuration(Duration duration) {
-    final hours = duration.inHours.toString().padLeft(2, '0');
-    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return "$hours:$minutes:$seconds";
+    final h = duration.inHours.toString().padLeft(2, '0');
+    final m = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return "$h:$m:$s";
   }
 
   @override
   Widget build(BuildContext context) {
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
-    final screenWidth = MediaQuery.of(context).size.width; // ✅ 추가
-    final videoHeight = screenWidth * 9 / 16; // ✅ 추가
+    final screenWidth = MediaQuery.of(context).size.width;
+    final videoHeight = screenWidth * 9 / 16;
 
     return Stack(
       children: [
@@ -235,8 +243,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
             children: [
               if (_controller.value.isInitialized)
                 SizedBox(
-                  width: screenWidth, // ✅ 수정
-                  height: videoHeight, // ✅ 수정
+                  width: screenWidth,
+                  height: videoHeight,
                   child: VideoPlayer(_controller),
                 )
               else
