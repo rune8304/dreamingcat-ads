@@ -148,7 +148,18 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     setState(() {
       _remainingTime += duration;
     });
+
     _startTimer();
+
+    // ✅ 절전모드 전용: 타이머 시작 5분 후 자동 진입 (단, 수동으로 안 켰을 때만)
+    Future.delayed(const Duration(minutes: 5), () {
+      if (!_manualDimToggle && _remainingTime > const Duration(minutes: 5)) {
+        setState(() {
+          _isDimmed = true;
+        });
+        print("🌙 절전 모드 자동 진입됨 (5분 후)");
+      }
+    });
   }
 
   void _cancelTimer() {
