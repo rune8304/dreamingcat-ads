@@ -88,6 +88,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
         },
         onAdFailedToLoad: (ad, error) {
           ad.dispose();
+          FlutterForegroundTask.stopService();
           print('광고 로딩 실패: $error');
         },
       ),
@@ -113,11 +114,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     final isRunning = await FlutterForegroundTask.isRunningService;
 
     if (!isRunning) {
-      await FlutterForegroundTask.startService(
+      FlutterForegroundTask.startService(
         notificationTitle: '꿈꾸는 고양이',
         notificationText: '영상 재생 중...',
         callback: startCallback,
       );
+
       print("✅ Foreground Task 실행됨");
     } else {
       print("ℹ️ Foreground Task 이미 실행 중");
@@ -131,30 +133,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       _bgAudioPlayer.setUrl(widget.videoUrl);
       _bgAudioPlayer.setLoopMode(ja.LoopMode.one);
       _bgAudioPlayer.play();
-      _showNotification();
     } else if (state == AppLifecycleState.resumed) {
       _bgAudioPlayer.stop();
       _controller.play();
       _cancelNotification();
     }
-  }
-
-  Future<void> _showNotification() async {
-    const androidDetails = AndroidNotificationDetails(
-      'dreaming_cat_channel_id',
-      '꿈꾸는 고양이 수면 알림',
-      channelDescription: '수면 중에도 재생이 유지됩니다',
-      importance: Importance.high,
-      priority: Priority.high,
-      icon: '@mipmap/ic_launcher',
-    );
-    const platformDetails = NotificationDetails(android: androidDetails);
-    await flutterLocalNotificationsPlugin.show(
-      0,
-      '꿈꾸는 고양이',
-      '영상 소리 재생 중입니다...',
-      platformDetails,
-    );
   }
 
   Future<void> _cancelNotification() async {
