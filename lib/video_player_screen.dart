@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math'; // ✅ 추가: 확률 계산용
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:lottie/lottie.dart';
@@ -7,8 +8,8 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart' as ja;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_foreground_task/flutter_foreground_task.dart'; // ✅ foreground task
-import 'foreground_task_handler.dart'; // ✅ handler
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'foreground_task_handler.dart';
 import 'main.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
@@ -50,12 +51,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   bool _isDimmed = false;
   bool _manualDimToggle = false;
 
+  InterstitialAd? _interstitialAd;
+  final Random _random = Random();
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    _startForegroundTask(); // ✅ 포그라운드 태스크 시작
+    _startForegroundTask();
+    _maybeShowInterstitialAd(); // ✅ 전면 광고 확률 적용
 
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
@@ -77,7 +82,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     });
 
     _bannerAd = BannerAd(
-      adUnitId: 'ca-app-pub-3940256099942544/6300978111',
+      adUnitId: 'ca-app-pub-7625356414808879/3876215538',
       size: AdSize.banner,
       request: const AdRequest(),
       listener: BannerAdListener(
@@ -89,10 +94,37 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
         onAdFailedToLoad: (ad, error) {
           ad.dispose();
           FlutterForegroundTask.stopService();
-          print('광고 로딩 실패: $error');
+          print('광고 로딩 실패: \$error');
         },
       ),
     )..load();
+  }
+
+  void _maybeShowInterstitialAd() {
+    int chance = _random.nextInt(5); // 0~4 중 1개 선택
+    if (chance == 0) {
+      InterstitialAd.load(
+        adUnitId: 'ca-app-pub-7625356414808879/7418222339',
+        request: const AdRequest(),
+        adLoadCallback: InterstitialAdLoadCallback(
+          onAdLoaded: (InterstitialAd ad) {
+            _interstitialAd = ad;
+            _interstitialAd?.show();
+            _interstitialAd?.fullScreenContentCallback =
+                FullScreenContentCallback(
+              onAdDismissedFullScreenContent: (ad) => ad.dispose(),
+              onAdFailedToShowFullScreenContent: (ad, error) {
+                ad.dispose();
+                print('전면 광고 실패: \$error');
+              },
+            );
+          },
+          onAdFailedToLoad: (LoadAdError error) {
+            print('전면 광고 로딩 실패: \$error');
+          },
+        ),
+      );
+    }
   }
 
   @override
@@ -105,7 +137,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     _countdownTimer?.cancel();
     _bannerAd.dispose();
     _cancelNotification();
-    FlutterForegroundTask.stopService(); // ✅ 포그라운드 태스크 종료
+    FlutterForegroundTask.stopService();
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     super.dispose();
   }

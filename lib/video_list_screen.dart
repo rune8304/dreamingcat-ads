@@ -73,7 +73,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
 
   void _loadBannerAd() {
     _bannerAd = BannerAd(
-      adUnitId: 'ca-app-pub-3940256099942544/6300978111',
+      adUnitId: 'ca-app-pub-7625356414808879/3876215538',
       size: AdSize.banner,
       request: const AdRequest(),
       listener: BannerAdListener(),
@@ -115,46 +115,96 @@ class _VideoListScreenState extends State<VideoListScreen> {
   }
 
   Widget _buildControlButton(
-      String label, bool isSelected, VoidCallback onPressed) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF3B82F6),
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        textStyle: const TextStyle(fontSize: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+    String label,
+    bool isSelected,
+    VoidCallback onPressed,
+  ) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFB3A7EA),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: const Color(0xFFB3AEC9),
+          width: 1.2,
         ),
-        elevation: 0,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 4,
+            offset: const Offset(3, 3),
+          ),
+        ],
       ),
-      child: Text(label),
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 17),
+          minimumSize: Size.zero, // ✅ 최소 크기 제한 제거
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap, // ✅ 터치 영역 최소화
+          visualDensity: VisualDensity.compact, // ✅ 여백 압축
+          textStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+        child: Text(label, textAlign: TextAlign.center),
+      ),
     );
   }
 
   Widget _buildCategoryButton(
       String label, bool isSelected, VoidCallback onPressed) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isSelected
-            ? const Color.fromARGB(255, 59, 181, 238)
-            : const Color(0xFF3B82F6),
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        textStyle: const TextStyle(fontSize: 14),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+    return Container(
+      margin: const EdgeInsets.all(4),
+      height: 48,
+      decoration: BoxDecoration(
+        color: isSelected ? const Color(0xFFB3A7EA) : const Color(0xFFB3AEC9),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: const Color(0xFF4C4565),
+          width: 1.2,
         ),
-        elevation: 0,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 4,
+            offset: const Offset(3, 3),
+          ),
+        ],
       ),
-      child: Text(label),
+      child: TextButton(
+        onPressed: onPressed,
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+          foregroundColor: Colors.white,
+        ),
+        child: Center(
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
     );
   }
 
   Widget _buildGridTile(Map<String, dynamic> video) {
-    return GestureDetector(
+    return InkWell(
       onTap: () {
+        print("✅ GridTile tapped: ${video['title']}"); // 디버깅용
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -165,44 +215,69 @@ class _VideoListScreenState extends State<VideoListScreen> {
           ),
         );
       },
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Stack(
-          children: [
-            Image.network(
-              video['thumbnail'] ?? '',
-              fit: BoxFit.cover,
-              width: double.infinity,
-              height: double.infinity,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Center(child: Icon(Icons.broken_image)),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF9B9ACF),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.6),
+              blurRadius: 4,
+              offset: const Offset(4, 4),
             ),
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                color: Colors.black.withOpacity(0.6),
-                padding: const EdgeInsets.all(8),
-                child: Text(
-                  video['title'] ?? '',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: ClipRRect(
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(12)),
+                child: Image.network(
+                  video['thumbnail'] ?? '',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Center(child: Icon(Icons.broken_image)),
                 ),
               ),
             ),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: IconButton(
-                icon: Icon(
-                  favoriteVideoUrls.contains(video['videoUrl'])
-                      ? Icons.favorite
-                      : Icons.favorite_border,
-                  color: Colors.pinkAccent,
-                ),
-                onPressed: () => _toggleFavorite(video['videoUrl'] ?? ''),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: const BoxDecoration(
+                color: Color(0xFF9B9ACF),
+                borderRadius:
+                    BorderRadius.vertical(bottom: Radius.circular(12)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        video['title'] ?? '',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      favoriteVideoUrls.contains(video['videoUrl'])
+                          ? Icons.favorite
+                          : Icons.favorite_border,
+                      color: Colors.pinkAccent,
+                      size: 20,
+                    ),
+                    onPressed: () => _toggleFavorite(video['videoUrl'] ?? ''),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
               ),
             ),
           ],
@@ -226,50 +301,59 @@ class _VideoListScreenState extends State<VideoListScreen> {
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(12),
+        height: 80,
         decoration: BoxDecoration(
+          color: const Color(0xFF9B9ACF), // 박스 배경색
           borderRadius: BorderRadius.circular(12),
-          color: Colors.grey[850],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.6), // 그림자 색상
+              blurRadius: 8, // 그림자 퍼짐 정도
+              offset: const Offset(4, 4), // x, y 방향
+            ),
+          ],
         ),
         child: Row(
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                bottomLeft: Radius.circular(12),
+              ),
               child: Image.network(
                 video['thumbnail'] ?? '',
                 width: 120,
-                height: 60,
+                height: double.infinity,
                 fit: BoxFit.cover,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    video['title'] ?? '',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  Expanded(
+                    child: Text(
+                      video['title'] ?? '',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.white,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      favoriteVideoUrls.contains(video['videoUrl'])
+                          ? Icons.favorite
+                          : Icons.favorite_border,
+                      color: Colors.pinkAccent,
+                    ),
+                    onPressed: () => _toggleFavorite(video['videoUrl'] ?? ''),
                   ),
                 ],
               ),
             ),
-            IconButton(
-              icon: Icon(
-                favoriteVideoUrls.contains(video['videoUrl'])
-                    ? Icons.favorite
-                    : Icons.favorite_border,
-                color: Colors.pinkAccent,
-              ),
-              onPressed: () => _toggleFavorite(video['videoUrl'] ?? ''),
-            )
           ],
         ),
       ),
@@ -279,24 +363,32 @@ class _VideoListScreenState extends State<VideoListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFF4C4565),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: const Color(0xFF2D2938),
         elevation: 0,
         title: Row(
+          crossAxisAlignment: CrossAxisAlignment.center, // ✅ 하단 정렬
           children: [
-            const Text('꿈꾸는고양이', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              '꿈꾸는고양이',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(width: 8),
-            Text('v1.0.1',
-                style: TextStyle(
-                    color: Colors.white.withOpacity(0.4), fontSize: 12)),
+            Text(
+              'v1.0.1',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.4),
+                fontSize: 12,
+              ),
+            ),
           ],
         ),
         actions: [
           Row(
             children: [
               _buildControlButton(
-                showFavoritesOnly ? 'favorit❤️' : 'favorit',
+                showFavoritesOnly ? 'favorit❤️' : 'favorit🤍',
                 showFavoritesOnly,
                 () {
                   setState(() {
@@ -321,100 +413,104 @@ class _VideoListScreenState extends State<VideoListScreen> {
       ),
       body: Column(
         children: [
-          Container(
-            width: double.infinity,
-            color: const Color(0xFF1E293B),
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: const Center(
-              child: Text(
-                'youtube 최신 업로드 영상',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
           GestureDetector(
-            onTap: _launchYoutube,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 98, 101, 105),
-                borderRadius: BorderRadius.circular(0),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    constraints: const BoxConstraints(maxWidth: 320),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(0),
-                          child: Image.network(
-                            latestYoutubeVideo?['thumbnailUrl'] ?? '',
-                            width: 120,
-                            height: 68,
-                            fit: BoxFit.cover,
+            onTap: () async {
+              const url = 'https://www.youtube.com/@asmr-dreamcat';
+              if (await canLaunchUrl(Uri.parse(url))) {
+                await launchUrl(Uri.parse(url),
+                    mode: LaunchMode.externalApplication);
+              }
+            },
+            child: Material(
+              color: const Color(0xFF4C4565),
+              child: InkWell(
+                splashColor: Colors.white24,
+                child: Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            '꿈꾸는 고양이 youtube 놀러가기',
+                            style: TextStyle(
+                              color: Color(0xFFF9F2E8),
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        SizedBox(
-                          width: 130,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                latestYoutubeVideo?['title'] ?? '',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                latestYoutubeVideo?['description'] ?? '',
-                                style: const TextStyle(color: Colors.white70),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
+                          const SizedBox(height: 2),
+                          const Text(
+                            '여러분의 구독과 좋아요는 힘이 됩니다',
+                            style: TextStyle(
+                              color: Color(0xCCF9F2E8),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                            ),
                           ),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Color(0xFFFB3A7EA),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Text(
+                              'CLICK',
+                              style: TextStyle(
+                                color: Color(0xFFF9F2E8),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Positioned(
+                        left: 0,
+                        child: Image.asset(
+                          'assets/youtube.png',
+                          width: 50,
+                          height: 50,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 40,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              children: categories.map((category) {
-                final isSelected = selectedCategory == category;
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: _buildCategoryButton(
-                    category,
-                    isSelected,
-                    () {
-                      setState(() {
-                        selectedCategory = category;
-                      });
-                    },
-                  ),
-                );
-              }).toList(),
+          Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFF2D2938), // 원하는 배경색 (예: 하늘색 계열)
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: SizedBox(
+              height: 40,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                children: categories.map((category) {
+                  final isSelected = selectedCategory == category;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: _buildCategoryButton(
+                      category,
+                      isSelected,
+                      () {
+                        setState(() {
+                          selectedCategory = category;
+                        });
+                      },
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -465,8 +561,8 @@ class _VideoListScreenState extends State<VideoListScreen> {
                             const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
                           crossAxisSpacing: 16,
-                          mainAxisSpacing: 20,
-                          childAspectRatio: 16 / 9,
+                          mainAxisSpacing: 10,
+                          childAspectRatio: 17 / 13,
                         ),
                         itemCount: filteredVideos.length,
                         itemBuilder: (context, index) {
@@ -487,10 +583,16 @@ class _VideoListScreenState extends State<VideoListScreen> {
           ),
           if (_bannerAd != null)
             Container(
-              alignment: Alignment.center,
-              width: _bannerAd!.size.width.toDouble(),
-              height: _bannerAd!.size.height.toDouble(),
-              child: AdWidget(ad: _bannerAd!),
+              width: double.infinity,
+              color: const Color(0xFF2D2938), // ✅ 피그마 하단 배경색
+              padding: const EdgeInsets.only(top: 8, bottom: 16),
+              child: Center(
+                child: SizedBox(
+                  width: _bannerAd!.size.width.toDouble(),
+                  height: _bannerAd!.size.height.toDouble(),
+                  child: AdWidget(ad: _bannerAd!),
+                ),
+              ),
             ),
         ],
       ),
