@@ -13,12 +13,6 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ✅ Android 13 이상 알림 권한 요청
-  if (await FlutterForegroundTask.checkNotificationPermission() !=
-      NotificationPermission.granted) {
-    await FlutterForegroundTask.requestNotificationPermission();
-  }
-
   // ✅ Firebase 초기화
   try {
     await Firebase.initializeApp();
@@ -34,7 +28,7 @@ void main() async {
       InitializationSettings(android: initializationSettingsAndroid);
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
 
-  // ✅ Foreground Task 초기화 (주의: await ❌)
+  // ✅ Foreground Task 초기화
   FlutterForegroundTask.init(
     androidNotificationOptions: AndroidNotificationOptions(
       channelId: 'dreaming_cat_channel_id',
@@ -64,8 +58,27 @@ void main() async {
   runApp(const WithForegroundTask(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+
+    // ✅ 앱 실행 후 알림 권한 요청
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final permission =
+          await FlutterForegroundTask.checkNotificationPermission();
+      if (permission != NotificationPermission.granted) {
+        await FlutterForegroundTask.requestNotificationPermission();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

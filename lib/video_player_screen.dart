@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math'; // ✅ 추가: 확률 계산용
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:lottie/lottie.dart';
@@ -7,10 +6,11 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart' as ja;
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart'; // ✅ 추가
+import 'main.dart'; // ✅ flutterLocalNotificationsPlugin 가져오기 위해 import
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
-import 'foreground_task_handler.dart';
-import 'main.dart';
+import 'foreground_task_handler.dart'; // startCallback이 정의된 파일
 
 class VideoPlayerScreen extends StatefulWidget {
   final String videoUrl;
@@ -48,19 +48,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   late BannerAd _bannerAd;
   bool _isBannerAdReady = false;
+
   bool _isDimmed = false;
   bool _manualDimToggle = false;
-
-  InterstitialAd? _interstitialAd;
-  final Random _random = Random();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-
-    _startForegroundTask();
-    _maybeShowInterstitialAd(); // ✅ 전면 광고 확률 적용
 
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
@@ -72,6 +67,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       ..initialize().then((_) {
         setState(() {});
         _controller.play();
+        WakelockPlus.enable();
         _controller.setLooping(true);
       });
 
@@ -93,42 +89,19 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
         },
         onAdFailedToLoad: (ad, error) {
           ad.dispose();
-          FlutterForegroundTask.stopService();
-          print('광고 로딩 실패: \$error');
+          print('광고 로딩 실패: $error');
         },
       ),
     )..load();
   }
 
-  void _maybeShowInterstitialAd() {
-    int chance = _random.nextInt(5); // 0~4 중 1개 선택
-    if (chance == 0) {
-      InterstitialAd.load(
-        adUnitId: 'ca-app-pub-7625356414808879/7418222339',
-        request: const AdRequest(),
-        adLoadCallback: InterstitialAdLoadCallback(
-          onAdLoaded: (InterstitialAd ad) {
-            _interstitialAd = ad;
-            _interstitialAd?.show();
-            _interstitialAd?.fullScreenContentCallback =
-                FullScreenContentCallback(
-              onAdDismissedFullScreenContent: (ad) => ad.dispose(),
-              onAdFailedToShowFullScreenContent: (ad, error) {
-                ad.dispose();
-                print('전면 광고 실패: \$error');
-              },
-            );
-          },
-          onAdFailedToLoad: (LoadAdError error) {
-            print('전면 광고 로딩 실패: \$error');
-          },
-        ),
-      );
-    }
-  }
-
   @override
   void dispose() {
+    try {
+      WakelockPlus.disable();
+    } catch (e) {
+      print('Wakelock 해제 중 오류: $e');
+    }
     WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
     _bgAudioPlayer.dispose();
@@ -136,26 +109,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     _messageTimer.cancel();
     _countdownTimer?.cancel();
     _bannerAd.dispose();
-    _cancelNotification();
-    FlutterForegroundTask.stopService();
+    _cancelNotification(); // ✅ 종료 시 알림 끄기
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     super.dispose();
-  }
-
-  void _startForegroundTask() async {
-    final isRunning = await FlutterForegroundTask.isRunningService;
-
-    if (!isRunning) {
-      FlutterForegroundTask.startService(
-        notificationTitle: '꿈꾸는 고양이',
-        notificationText: '영상 재생 중...',
-        callback: startCallback,
-      );
-
-      print("✅ Foreground Task 실행됨");
-    } else {
-      print("ℹ️ Foreground Task 이미 실행 중");
-    }
   }
 
   @override
@@ -165,33 +121,33 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       _bgAudioPlayer.setUrl(widget.videoUrl);
       _bgAudioPlayer.setLoopMode(ja.LoopMode.one);
       _bgAudioPlayer.play();
+      _showNotification(); // ✅ 백그라운드 진입 시 알림 표시
     } else if (state == AppLifecycleState.resumed) {
       _bgAudioPlayer.stop();
       _controller.play();
-      _cancelNotification();
+      _cancelNotification(); // ✅ 복귀 시 알림 제거
+    } else if (state == AppLifecycleState.detached) {
+      _cancelNotification(); // ✅ 완전 종료 시 알림 제거 시도
     }
   }
 
+  Future<void> _showNotification() async {
+    await FlutterForegroundTask.startService(
+      notificationTitle: '꿈꾸는 고양이',
+      notificationText: '영상 재생 중...',
+      callback: startCallback,
+    );
+  }
+
   Future<void> _cancelNotification() async {
-    await flutterLocalNotificationsPlugin.cancel(0);
+    await FlutterForegroundTask.stopService();
   }
 
   void _addTime(Duration duration) {
     setState(() {
       _remainingTime += duration;
     });
-
     _startTimer();
-
-    // ✅ 절전모드 전용: 타이머 시작 5분 후 자동 진입 (단, 수동으로 안 켰을 때만)
-    Future.delayed(const Duration(minutes: 5), () {
-      if (!_manualDimToggle && _remainingTime > const Duration(minutes: 5)) {
-        setState(() {
-          _isDimmed = true;
-        });
-        print("🌙 절전 모드 자동 진입됨 (5분 후)");
-      }
-    });
   }
 
   void _cancelTimer() {
@@ -236,10 +192,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   String _formatDuration(Duration duration) {
-    final h = duration.inHours.toString().padLeft(2, '0');
-    final m = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final s = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return "$h:$m:$s";
+    final hours = duration.inHours.toString().padLeft(2, '0');
+    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return "$hours:$minutes:$seconds";
   }
 
   @override
@@ -256,7 +212,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
               ? null
               : AppBar(
                   title: Text(widget.title),
-                  backgroundColor: const Color(0xFF1E293B),
+                  backgroundColor: const Color(0xFF2D2938),
                   elevation: 0,
                   leading: IconButton(
                     icon: const Icon(Icons.arrow_back),
@@ -264,7 +220,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                   ),
                   centerTitle: true,
                 ),
-          backgroundColor: const Color(0xFF0F172A),
+          backgroundColor: const Color(0xFF433E57),
           body: Column(
             children: [
               if (_controller.value.isInitialized)
@@ -286,7 +242,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
           ),
           bottomNavigationBar: _isBannerAdReady && !isLandscape
               ? Container(
-                  color: const Color(0xFF0F172A),
+                  color: const Color(0xFF2D2938),
                   height: _bannerAd.size.height.toDouble(),
                   child: AdWidget(ad: _bannerAd),
                 )
@@ -302,7 +258,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
             right: 20,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 40, 132, 175),
+                backgroundColor: const Color(0xFF583AC5),
               ),
               onPressed: () {
                 setState(() {
@@ -318,58 +274,186 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   Widget _buildTimerControls() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-      decoration: BoxDecoration(
-        color: Colors.blueGrey.shade800,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4.0),
-            child: Text(
-              "타이머: ${_formatDuration(_remainingTime)}",
-              style: const TextStyle(color: Colors.white, fontSize: 18),
-            ),
+    return Column(
+      children: [
+        // ⬛ 검정 박스: 타이머 시간 + 아이콘만 포함
+        Container(
+          width: 260, // 박스 전체 너비
+          height: 148, // (선택) 높이 조정
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+          decoration: BoxDecoration(
+            color: const Color(0x807E62E2),
+            borderRadius: BorderRadius.circular(12),
           ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            alignment: WrapAlignment.center,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _buildTimerButton("1시간", const Duration(hours: 1)),
-              _buildTimerButton("10분", const Duration(minutes: 10)),
-              _buildTimerButton("5분", const Duration(minutes: 5)),
-              SizedBox(
-                width: 75,
-                child: ElevatedButton(
-                  onPressed: _cancelTimer,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent,
-                  ),
-                  child: const Text("취소"),
+              // ⏱ 타이머 텍스트 박스
+              Container(
+                width: double.infinity, // 박스 전체 기준으로 맞춤
+                height: 50,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF583AC5),
+                  borderRadius: BorderRadius.circular(12),
                 ),
+                child: Text(
+                  _formatDuration(_remainingTime),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 2),
+
+              // ▶️⏸️⏹️ 아이콘 버튼들
+              // ▶️⏸️⏹️ 아이콘 버튼들 (기능 연결됨)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          _countdownTimer?.cancel(); // 일시정지
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      splashColor: Colors.white24,
+                      highlightColor: Colors.white10,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Image.asset('assets/pause.png', width: 32),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 0),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        if (_remainingTime > Duration.zero) {
+                          _startTimer(); // 재생
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      splashColor: Colors.white24,
+                      highlightColor: Colors.white10,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Image.asset('assets/play.png', width: 32),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 0),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _cancelTimer, // 정지
+                      borderRadius: BorderRadius.circular(8),
+                      splashColor: Colors.white24,
+                      highlightColor: Colors.white10,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Image.asset('assets/stop.png', width: 32),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
+        ),
+        const SizedBox(height: 16),
+
+        _buildTimerButtonsGrid(),
+      ],
+    );
+  }
+
+  Widget _buildTimerButtonsGrid() {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildTimerRow("1시간", const Duration(hours: 1)),
+            const SizedBox(width: 12),
+            _buildTimerRow("30분", const Duration(minutes: 30)),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildTimerRow("10분", const Duration(minutes: 10)),
+            const SizedBox(width: 12),
+            _buildTimerRow("5분", const Duration(minutes: 5)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimerRow(String label, Duration duration) {
+    return Container(
+      width: 120, // 버튼 하나 기준 70% 크기
+      height: 30,
+      decoration: BoxDecoration(
+        color: const Color(0xFF583AC5),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 4,
+            offset: const Offset(2, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          _buildCircleIcon("+", () => _addTime(duration)),
+          Expanded(
+            child: Container(
+              color: const Color(0xFF2D2938),
+              alignment: Alignment.center,
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ),
+          _buildCircleIcon("–", () => _addTime(-duration)),
         ],
       ),
     );
   }
 
-  Widget _buildTimerButton(String label, Duration duration) {
-    return SizedBox(
-      width: 85,
-      child: ElevatedButton(
-        onPressed: () => _addTime(duration),
+  Widget _buildCircleIcon(String text, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 35,
+        height: 30,
+        alignment: Alignment.center,
         child: Text(
-          label,
-          softWrap: false,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 14),
+          text,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );
@@ -400,14 +484,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0).withOpacity(0.85),
+        color: const Color(0xFF7E62E2),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.lightBlueAccent),
+        border: Border.all(color: Color(0xFF583AC5)),
       ),
       child: Text(
         _messages[_messageIndex],
         style: const TextStyle(
-          color: Colors.black87,
+          color: Colors.white,
           fontSize: 14,
           fontStyle: FontStyle.italic,
         ),

@@ -47,3 +47,7 @@ flutter:
     - assets/sounds/alarm.mp3
     - assets/logo.png
     - assets/youtube.png
+    - assets/stop.png
+    - assets/pause.png
+    - assets/play.png
+    - assets/nightstar.png

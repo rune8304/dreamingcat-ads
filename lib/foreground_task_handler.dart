@@ -1,6 +1,7 @@
 import 'dart:async';
-import 'dart:isolate'; // ✅ 필수!
+import 'dart:isolate'; // ✅ 필수
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart'; // ✅ 알림 제거용
 
 /// Foreground Task에서 실행될 핸들러 클래스
 class MyForegroundTaskHandler extends TaskHandler {
@@ -21,6 +22,11 @@ class MyForegroundTaskHandler extends TaskHandler {
   Future<void> onDestroy(DateTime timestamp, SendPort? sendPort) async {
     print("💤 Foreground Task 종료됨");
     _timer?.cancel();
+    await FlutterLocalNotificationsPlugin().cancel(0); // 여기서 알림 제거
+
+    // ✅ 강제종료 시 알림도 제거
+    final plugin = FlutterLocalNotificationsPlugin();
+    await plugin.cancelAll();
   }
 
   @override
@@ -36,7 +42,7 @@ class MyForegroundTaskHandler extends TaskHandler {
 
   @override
   void onRepeatEvent(DateTime timestamp, SendPort? sendPort) {
-    // 반복 이벤트 처리 필요 시 여기에 작성
+    // 반복 이벤트 처리 필요 시 여기에 작성 가능
     // print("🔁 반복 이벤트 발생: $timestamp");
   }
 }

@@ -24,6 +24,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
   final List<String> categories = ['전체', '비', '바다', '바람', '불', '풀벌레', '도시'];
 
   @override
+  @override
   void initState() {
     super.initState();
     _loadFavorites();
@@ -31,11 +32,18 @@ class _VideoListScreenState extends State<VideoListScreen> {
     _loadLatestYoutubeVideo();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_isUpdateDialogShown) {
-        _showUpdateDialog();
-        _isUpdateDialogShown = true;
-      }
+      _checkAndShowUpdateDialog(); // ✅ 최초 1회만 띄우는 함수 호출
     });
+  }
+
+  void _checkAndShowUpdateDialog() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasShown = prefs.getBool('update_dialog_shown') ?? false;
+
+    if (!hasShown) {
+      _showUpdateDialog();
+      await prefs.setBool('update_dialog_shown', true); // ✅ 최초 1회만 표시
+    }
   }
 
   void _showUpdateDialog() {
@@ -51,7 +59,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
           ),
         ),
         content: const Text(
-          '이번 업데이트:\n\n- 유튜브 최신 영상 소개\n- 썸네일 및 UI 개선\n- 백그라운드 재생 및 알림 표시\n- 자체영상 재생기능 추가',
+          '이번 업데이트:\n\n- 앱 ui 전면 개선 \n- 백그라운드 재생 안정화\n- 타이머 시간 조절 기능 추가',
           style: TextStyle(color: Colors.white70),
         ),
         actions: [
@@ -122,10 +130,10 @@ class _VideoListScreenState extends State<VideoListScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFFB3A7EA),
+        color: const Color(0xFF583AC5),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: const Color(0xFFB3AEC9),
+          color: const Color(0xFF7E62E2),
           width: 1.2,
         ),
         boxShadow: [
@@ -166,7 +174,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
       margin: const EdgeInsets.all(4),
       height: 48,
       decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFFB3A7EA) : const Color(0xFFB3AEC9),
+        color: isSelected ? const Color(0xFF583AC5) : const Color(0xFF7E62E2),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: const Color(0xFF4C4565),
@@ -218,7 +226,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
       borderRadius: BorderRadius.circular(12),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF9B9ACF),
+          color: const Color.fromARGB(255, 96, 95, 97),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
@@ -247,7 +255,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               decoration: const BoxDecoration(
-                color: Color(0xFF9B9ACF),
+                color: Color(0xFF7E62E2),
                 borderRadius:
                     BorderRadius.vertical(bottom: Radius.circular(12)),
               ),
@@ -303,7 +311,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
         margin: const EdgeInsets.only(bottom: 12),
         height: 80,
         decoration: BoxDecoration(
-          color: const Color(0xFF9B9ACF), // 박스 배경색
+          color: const Color(0xFF7E62E2), // 박스 배경색
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
@@ -336,7 +344,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
                     child: Text(
                       video['title'] ?? '',
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 20,
                         color: Colors.white,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -376,7 +384,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
             ),
             const SizedBox(width: 8),
             Text(
-              'v1.0.1',
+              'v1.0.2',
               style: TextStyle(
                 color: Colors.white.withOpacity(0.4),
                 fontSize: 12,
@@ -422,7 +430,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
               }
             },
             child: Material(
-              color: const Color(0xFF4C4565),
+              color: const Color.fromARGB(255, 56, 48, 87),
               child: InkWell(
                 splashColor: Colors.white24,
                 child: Container(
@@ -439,7 +447,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
                             '꿈꾸는 고양이 youtube 놀러가기',
                             style: TextStyle(
                               color: Color(0xFFF9F2E8),
-                              fontSize: 18,
+                              fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -457,7 +465,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Color(0xFFFB3A7EA),
+                              color: Color(0xFF583AC5),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: const Text(
@@ -475,8 +483,8 @@ class _VideoListScreenState extends State<VideoListScreen> {
                         left: 0,
                         child: Image.asset(
                           'assets/youtube.png',
-                          width: 50,
-                          height: 50,
+                          width: 40,
+                          height: 40,
                         ),
                       ),
                     ],
@@ -561,7 +569,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
                             const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
                           crossAxisSpacing: 16,
-                          mainAxisSpacing: 10,
+                          mainAxisSpacing: 20,
                           childAspectRatio: 17 / 13,
                         ),
                         itemCount: filteredVideos.length,
