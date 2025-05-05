@@ -4,6 +4,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'video_player_screen.dart';
+import 'dart:math';
 
 class VideoListScreen extends StatefulWidget {
   const VideoListScreen({super.key});
@@ -13,6 +14,8 @@ class VideoListScreen extends StatefulWidget {
 }
 
 class _VideoListScreenState extends State<VideoListScreen> {
+  InterstitialAd? _interstitialAd;
+  bool _isInterstitialAdReady = false;
   String selectedCategory = '전체';
   bool isGrid = true;
   bool showFavoritesOnly = false;
@@ -30,6 +33,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
     _loadFavorites();
     _loadBannerAd();
     _loadLatestYoutubeVideo();
+    _loadInterstitialAd();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAndShowUpdateDialog(); // ✅ 최초 1회만 띄우는 함수 호출
@@ -86,6 +90,23 @@ class _VideoListScreenState extends State<VideoListScreen> {
       request: const AdRequest(),
       listener: BannerAdListener(),
     )..load();
+  }
+
+  void _loadInterstitialAd() {
+    InterstitialAd.load(
+      adUnitId: 'ca-app-pub-7625356414808879/7418222339',
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (ad) {
+          _interstitialAd = ad;
+          _isInterstitialAdReady = true;
+        },
+        onAdFailedToLoad: (error) {
+          print('❌ 전면 광고 로드 실패: $error');
+          _isInterstitialAdReady = false;
+        },
+      ),
+    );
   }
 
   Future<void> _loadLatestYoutubeVideo() async {
@@ -212,16 +233,52 @@ class _VideoListScreenState extends State<VideoListScreen> {
   Widget _buildGridTile(Map<String, dynamic> video) {
     return InkWell(
       onTap: () {
-        print("✅ GridTile tapped: ${video['title']}"); // 디버깅용
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => VideoPlayerScreen(
-              videoUrl: video['videoUrl'] ?? '',
-              title: video['title'] ?? '',
+        print("✅ GridTile tapped: ${video['title']}");
+
+        if (_isInterstitialAdReady && Random().nextInt(4) == 0) {
+          // 25% 확률
+          _interstitialAd!.fullScreenContentCallback =
+              FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) {
+              ad.dispose();
+              _loadInterstitialAd();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => VideoPlayerScreen(
+                    videoUrl: video['videoUrl'] ?? '',
+                    title: video['title'] ?? '',
+                  ),
+                ),
+              );
+            },
+            onAdFailedToShowFullScreenContent: (ad, error) {
+              ad.dispose();
+              _loadInterstitialAd();
+              // 실패 시에도 그냥 바로 이동
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => VideoPlayerScreen(
+                    videoUrl: video['videoUrl'] ?? '',
+                    title: video['title'] ?? '',
+                  ),
+                ),
+              );
+            },
+          );
+          _interstitialAd!.show();
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => VideoPlayerScreen(
+                videoUrl: video['videoUrl'] ?? '',
+                title: video['title'] ?? '',
+              ),
             ),
-          ),
-        );
+          );
+        }
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(
@@ -297,15 +354,50 @@ class _VideoListScreenState extends State<VideoListScreen> {
   Widget _buildListTile(Map<String, dynamic> video) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => VideoPlayerScreen(
-              videoUrl: video['videoUrl'] ?? '',
-              title: video['title'] ?? '',
+        if (_isInterstitialAdReady && Random().nextInt(4) == 0) {
+          // 25% 확률로 전면 광고 표시
+          _interstitialAd!.fullScreenContentCallback =
+              FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) {
+              ad.dispose();
+              _loadInterstitialAd(); // 광고 재로드
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => VideoPlayerScreen(
+                    videoUrl: video['videoUrl'] ?? '',
+                    title: video['title'] ?? '',
+                  ),
+                ),
+              );
+            },
+            onAdFailedToShowFullScreenContent: (ad, error) {
+              ad.dispose();
+              _loadInterstitialAd();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => VideoPlayerScreen(
+                    videoUrl: video['videoUrl'] ?? '',
+                    title: video['title'] ?? '',
+                  ),
+                ),
+              );
+            },
+          );
+          _interstitialAd!.show();
+        } else {
+          // 광고 없이 바로 이동
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => VideoPlayerScreen(
+                videoUrl: video['videoUrl'] ?? '',
+                title: video['title'] ?? '',
+              ),
             ),
-          ),
-        );
+          );
+        }
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
